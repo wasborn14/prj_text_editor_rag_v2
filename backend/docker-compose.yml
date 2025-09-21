@@ -28,7 +28,7 @@ services:
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - API_SECRET_KEY=${API_SECRET_KEY}
+      - RAG_API_KEY=${RAG_API_KEY}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     depends_on:
       - chromadb
