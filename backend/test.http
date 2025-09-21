@@ -1,0 +1,83 @@
+### VPS RAG API テスト
+# VSCode REST Client拡張で使用
+# 使い方: 各リクエストの上の「Send Request」をクリック
+
+@baseUrl = http://localhost:8001
+@token = test123
+@repo = wasborn14/test-editor
+
+### 1. ヘルスチェック（認証不要）
+GET {{baseUrl}}/health
+
+### 2. ルート情報（認証不要）
+GET {{baseUrl}}/
+
+### 3. 検索API
+POST {{baseUrl}}/api/search
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "query": "useAutoSync フックの使い方",
+  "repository": "{{repo}}",
+  "limit": 5
+}
+
+### 4. GitHub同期
+POST {{baseUrl}}/api/sync
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "repository": "{{repo}}",
+  "force": false
+}
+
+### 5. AIチャット
+POST {{baseUrl}}/api/chat
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "このプロジェクトでSupabaseはどのように使われていますか？",
+  "repository": "{{repo}}",
+  "context_limit": 3
+}
+
+### 6. 階層検索テスト（docsディレクトリ内）
+POST {{baseUrl}}/api/search/directory
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "query": "API認証",
+  "repository": "{{repo}}",
+  "directory": "docs/api",
+  "limit": 3
+}
+
+### 7. リポジトリ構造確認
+GET {{baseUrl}}/api/repository/{{repo}}/structure
+Authorization: Bearer {{token}}
+
+### 8. 深い階層での検索テスト
+POST {{baseUrl}}/api/search/directory
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "query": "AWS デプロイ",
+  "repository": "{{repo}}",
+  "directory": "tutorials/deployment/cloud",
+  "limit": 5
+}
+
+### 9. 認証エラーテスト（間違ったトークン）
+POST {{baseUrl}}/api/search
+Authorization: Bearer wrong-token
+Content-Type: application/json
+
+{
+  "query": "test",
+  "repository": "test/repo"
+}

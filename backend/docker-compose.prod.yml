@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  rag-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rag-api-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8001"  # ローカルホストのみ
+    volumes:
+      - ./data/chromadb:/data/chromadb
+      - ./logs:/app/logs
+      - ../shared:/app/shared:ro  # 共通型定義
+    environment:
+      - ENV=production
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env.prod
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - rag-network
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+        reservations:
+          memory: 400M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  rag-network:
+    driver: bridge
+
+volumes:
+  chromadb_data:
+    driver: local
