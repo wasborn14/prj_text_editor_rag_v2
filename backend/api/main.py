@@ -38,7 +38,7 @@ security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """APIトークン検証"""
-    if credentials.credentials != os.getenv("API_SECRET_KEY"):
+    if credentials.credentials != os.getenv("RAG_API_KEY"):
         raise HTTPException(status_code=401, detail="Invalid authentication")
     return credentials.credentials
 
