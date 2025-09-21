@@ -14,13 +14,11 @@ services:
       - ./data/chromadb:/data/chromadb
       - ./logs:/app/logs
       - ../shared:/app/shared:ro  # 共通型定義
-    environment:
-      - ENV=production
-      - API_SECRET_KEY=${API_SECRET_KEY}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - PYTHONUNBUFFERED=1
     env_file:
       - .env.prod
+    environment:
+      - ENV=production
+      - PYTHONUNBUFFERED=1
     logging:
       driver: "json-file"
       options:
