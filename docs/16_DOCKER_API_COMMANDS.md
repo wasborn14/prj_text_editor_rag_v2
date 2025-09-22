@@ -1,5 +1,28 @@
 # Docker & API 基本コマンドガイド
 
+## Docker 構成の違い
+
+### ローカル開発環境の構成
+
+**サービス構成:**
+- `chromadb` - 独立したChromeDBサービス (ポート8000)
+- `rag-api` - FastAPIアプリケーション (ポート8001)
+
+**特徴:**
+- ChromaDBが独立コンテナで動作
+- リロード機能付きで開発向け
+- 両サービス間はnetwork経由で通信
+
+### VPS本番環境の構成
+
+**サービス構成:**
+- `rag-api` - FastAPIアプリケーション内でChromeDB実行 (ポート8001のみ)
+
+**特徴:**
+- ChromaDBはAPIコンテナ内で動作（独立サービスなし）
+- メモリ制限（800MB）、ヘルスチェック、自動再起動設定
+- localhost（127.0.0.1）のみでバインド
+
 ## Docker イメージビルド手順
 
 ### ローカル開発環境
@@ -16,11 +39,11 @@ docker-compose build --no-cache
 docker-compose up -d
 
 # 特定サービスのみ再ビルド
-docker-compose build --no-cache api
-docker-compose restart api
+docker-compose build --no-cache rag-api
+docker-compose restart rag-api
 
 # ログ確認
-docker-compose logs -f api
+docker-compose logs -f rag-api
 docker-compose logs -f chromadb
 
 # 停止・削除
@@ -44,13 +67,12 @@ docker-compose -f docker-compose.prod.yml up -d
 docker-compose -f docker-compose.prod.yml build --no-cache
 docker-compose -f docker-compose.prod.yml up -d
 
-# 特定サービスのみ再ビルド
-docker-compose -f docker-compose.prod.yml build --no-cache api
-docker-compose -f docker-compose.prod.yml restart api
+# 特定サービスのみ再ビルド（本番環境はrag-apiのみ）
+docker-compose -f docker-compose.prod.yml build --no-cache rag-api
+docker-compose -f docker-compose.prod.yml restart rag-api
 
-# ログ確認
-docker-compose -f docker-compose.prod.yml logs -f api
-docker-compose -f docker-compose.prod.yml logs -f chromadb
+# ログ確認（chromadbサービスは存在しない）
+docker-compose -f docker-compose.prod.yml logs -f rag-api
 
 # 状態確認
 docker-compose -f docker-compose.prod.yml ps
@@ -179,9 +201,13 @@ curl -X DELETE http://160.251.211.37:8001/api/admin/collections/wasborn14%2Ftest
 # ChromaDBデータ削除
 rm -rf /Users/estyle-0170/Environment/test/2025/09/prj_text_editor_rag_v1/backend/data/chromadb/*
 
-# コンテナ再起動
+# コンテナ再起動（両サービスを再起動）
 cd /Users/estyle-0170/Environment/test/2025/09/prj_text_editor_rag_v1/backend
-docker-compose restart chromadb api
+docker-compose restart chromadb rag-api
+
+# または個別に再起動
+docker-compose restart chromadb
+docker-compose restart rag-api
 ```
 
 ### VPS 環境
@@ -191,9 +217,12 @@ docker-compose restart chromadb api
 ssh root@160.251.211.37
 rm -rf /opt/prj_text_editor_rag_v1/backend/data/chromadb/*
 
-# コンテナ再起動
+# コンテナ再起動（rag-apiのみ - chromadbサービスは存在しない）
 cd /opt/prj_text_editor_rag_v1/backend
-docker-compose -f docker-compose.prod.yml restart chromadb api
+docker-compose -f docker-compose.prod.yml restart rag-api
+
+# または全サービス再起動
+docker-compose -f docker-compose.prod.yml restart
 ```
 
 ## 環境変数確認
@@ -329,13 +358,29 @@ docker-compose -f docker-compose.prod.yml restart api
 
 ### 3. ChromaDB 更新時
 
+#### ローカル環境
 ```bash
 # データリセット
 rm -rf backend/data/chromadb/*
-docker-compose restart chromadb api
+docker-compose restart chromadb rag-api
 
 # 再同期
 curl -X POST http://localhost:8001/api/sync \
+  -H "Authorization: Bearer 4f5793c108119abe" \
+  -H "Content-Type: application/json" \
+  -d '{"repository": "wasborn14/test-editor-docs"}'
+```
+
+#### VPS環境
+```bash
+# データリセット
+ssh root@160.251.211.37
+cd /opt/prj_text_editor_rag_v1/backend
+rm -rf data/chromadb/*
+docker-compose -f docker-compose.prod.yml restart rag-api
+
+# 再同期
+curl -X POST http://160.251.211.37/api/sync \
   -H "Authorization: Bearer 4f5793c108119abe" \
   -H "Content-Type: application/json" \
   -d '{"repository": "wasborn14/test-editor-docs"}'
