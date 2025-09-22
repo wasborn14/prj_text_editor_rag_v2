@@ -42,9 +42,16 @@ class ChromaService:
                 embedding_function=self.embedding_function
             )
         except:
+            # コレクション作成時にメタデータを追加
+            from datetime import datetime
             return self.client.create_collection(
                 name=collection_name,
-                embedding_function=self.embedding_function
+                embedding_function=self.embedding_function,
+                metadata={
+                    "repository_name": repo_name,
+                    "created_at": datetime.now().isoformat(),
+                    "embedding_model": "text-embedding-ada-002"
+                }
             )
 
     def split_into_chunks(self, text: str, chunk_size: int = 500) -> List[str]:

@@ -15,16 +15,16 @@ async def list_collections(token: str = Depends(verify_token)):
 
     result = []
     for col in collections:
-        # ハッシュから元のリポジトリ名を推測
-        repo_names = {
-            f"repo_{hashlib.md5('wasborn14/test-editor'.encode()).hexdigest()[:8]}": "wasborn14/test-editor",
-            f"repo_{hashlib.md5('wasborn14/prj_text_editor_rag_v1'.encode()).hexdigest()[:8]}": "wasborn14/prj_text_editor_rag_v1",
-        }
+        # メタデータから直接リポジトリ名を取得
+        metadata = col.metadata or {}
+        repo_name = metadata.get("repository_name", "unknown")
 
         result.append({
             "name": col.name,
-            "probable_repo": repo_names.get(col.name, "unknown"),
-            "document_count": col.count()
+            "probable_repo": repo_name,
+            "document_count": col.count(),
+            "created_at": metadata.get("created_at"),
+            "embedding_model": metadata.get("embedding_model")
         })
 
     return {"collections": result}
