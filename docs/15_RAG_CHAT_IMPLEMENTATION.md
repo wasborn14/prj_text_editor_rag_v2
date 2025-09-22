@@ -1,24 +1,26 @@
-# RAGチャット機能実装ガイド
+# RAG チャット機能実装ガイド
 
 ## 概要
 
-OpenAI APIを使用したRAG（Retrieval-Augmented Generation）チャット機能の実装完了。
-ユーザーの質問に対して、リポジトリのドキュメントを検索し、関連情報を基にAIが回答を生成します。
+OpenAI API を使用した RAG（Retrieval-Augmented Generation）チャット機能の実装完了。
+ユーザーの質問に対して、リポジトリのドキュメントを検索し、関連情報を基に AI が回答を生成します。
 
 ## 実装内容
 
 ### 1. 新規ファイル
-- `backend/api/services/openai_service.py` - OpenAI APIクライアント
-- `backend/api/routers/chat.py` - RAGチャットエンドポイント（更新）
+
+- `backend/api/services/openai_service.py` - OpenAI API クライアント
+- `backend/api/routers/chat.py` - RAG チャットエンドポイント（更新）
 
 ### 2. 更新ファイル
-- `backend/api/requirements.txt` - openai>=1.30.0に更新
-- `backend/.env.example` - OPENAI_API_KEY追加
+
+- `backend/api/requirements.txt` - openai>=1.30.0 に更新
+- `backend/.env.example` - OPENAI_API_KEY 追加
 - `backend/.env.prod.example` - 本番環境用テンプレート
 
 ## セットアップ手順
 
-### 1. OpenAI APIキーの取得
+### 1. OpenAI API キーの取得
 
 1. https://platform.openai.com/api-keys にアクセス
 2. 「Create new secret key」をクリック
@@ -27,6 +29,7 @@ OpenAI APIを使用したRAG（Retrieval-Augmented Generation）チャット機�
 ### 2. 環境変数の設定
 
 #### ローカル環境
+
 ```
 cd backend
 cp .env.example .env
@@ -35,7 +38,8 @@ cp .env.example .env
 OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxx  # 実際のAPIキーを設定
 ```
 
-#### VPS環境
+#### VPS 環境
+
 ```
 cd backend
 cp .env.prod.example .env.prod
@@ -44,7 +48,7 @@ cp .env.prod.example .env.prod
 OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxx  # 実際のAPIキーを設定
 ```
 
-### 3. Dockerイメージの再ビルド
+### 3. Docker イメージの再ビルド
 
 ```
 # ローカル環境
@@ -127,7 +131,8 @@ curl -X POST http://localhost:8001/api/chat \
 
 ### エラー時のレスポンス
 
-#### OpenAI APIキー未設定
+#### OpenAI API キー未設定
+
 ```json
 {
   "detail": "OpenAI API key is not configured. Chat feature is disabled."
@@ -135,6 +140,7 @@ curl -X POST http://localhost:8001/api/chat \
 ```
 
 #### リポジトリ未同期
+
 ```json
 {
   "answer": "関連するドキュメントが見つかりませんでした。リポジトリが同期されているか確認してください。",
@@ -143,7 +149,7 @@ curl -X POST http://localhost:8001/api/chat \
 }
 ```
 
-## VPSでのテスト
+## VPS でのテスト
 
 ```
 # VPSでのチャットテスト
@@ -151,20 +157,20 @@ curl -X POST http://160.251.211.37/api/chat \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer 4f5793c108119abe' \
   -d '{
-    "message": "Dockerの設定について教えてください",
+    "message": "rag-apiのポート番号を教えて",
     "repository": "wasborn14/test-editor",
-    "context_limit": 3
+    "context_limit": 5
   }'
 ```
 
 ## 動作の仕組み
 
-### RAGパイプライン
+### RAG パイプライン
 
 1. **質問受付**: ユーザーからの質問を受け取る
-2. **セマンティック検索**: ChromaDBで関連ドキュメントを検索
-3. **コンテキスト構築**: 検索結果上位N件をコンテキストとして結合
-4. **AI生成**: OpenAI GPT-4o-miniがコンテキストを基に回答生成
+2. **セマンティック検索**: ChromaDB で関連ドキュメントを検索
+3. **コンテキスト構築**: 検索結果上位 N 件をコンテキストとして結合
+4. **AI 生成**: OpenAI GPT-4o-mini がコンテキストを基に回答生成
 5. **レスポンス**: 回答とソース情報を返却
 
 ### 使用モデル
@@ -175,7 +181,7 @@ curl -X POST http://160.251.211.37/api/chat \
 
 ## トラブルシューティング
 
-### OpenAI APIエラー
+### OpenAI API エラー
 
 ```
 # APIキーの確認
@@ -187,25 +193,27 @@ docker-compose logs rag-api | grep "OpenAI"
 
 ### レート制限エラー
 
-OpenAI APIのレート制限に達した場合：
+OpenAI API のレート制限に達した場合：
+
 - 少し時間をおいて再試行
-- APIキーのクォータを確認: https://platform.openai.com/usage
+- API キーのクォータを確認: https://platform.openai.com/usage
 
 ### コンテキスト不足
 
 回答が不十分な場合：
-- `context_limit`を5-10に増やす
+
+- `context_limit`を 5-10 に増やす
 - リポジトリを再同期して最新データを取得
 
 ## コスト見積もり
 
-### OpenAI API料金（2024年9月時点）
+### OpenAI API 料金（2024 年 9 月時点）
 
 - **gpt-4o-mini**:
   - Input: $0.15 / 1M tokens
   - Output: $0.60 / 1M tokens
 
-### 1リクエストあたりのコスト
+### 1 リクエストあたりのコスト
 
 - 平均入力: 1,500 tokens (コンテキスト + プロンプト)
 - 平均出力: 300 tokens (回答)
@@ -213,8 +221,8 @@ OpenAI APIのレート制限に達した場合：
 
 ### 月間コスト見積もり
 
-- 1日100リクエスト: $1.2 / 月
-- 1日1000リクエスト: $12 / 月
+- 1 日 100 リクエスト: $1.2 / 月
+- 1 日 1000 リクエスト: $12 / 月
 
 ## 今後の改善案
 
@@ -226,5 +234,5 @@ OpenAI APIのレート制限に達した場合：
 
 ## まとめ
 
-RAGチャット機能により、リポジトリのドキュメントに基づいた正確な回答が可能になりました。
-OpenAI APIキーを設定し、リポジトリを同期すれば、すぐに利用開始できます。
+RAG チャット機能により、リポジトリのドキュメントに基づいた正確な回答が可能になりました。
+OpenAI API キーを設定し、リポジトリを同期すれば、すぐに利用開始できます。
