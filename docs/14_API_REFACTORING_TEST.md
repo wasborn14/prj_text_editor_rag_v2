@@ -81,7 +81,7 @@ curl -X POST http://localhost:8001/api/search/directory \
 #### 4. リポジトリ構造取得
 
 ```
-curl -X GET "http://localhost:8001/api/repository/structure?repo_name=wasborn14/prj_text_editor_rag_v1" \
+curl -X GET "http://localhost:8001/api/repository/structure?repo_name=wasborn14/test-editor" \
   -H 'Authorization: Bearer 4f5793c108119abe'
 ```
 
@@ -132,7 +132,7 @@ curl -X POST http://160.251.211.37/api/sync \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer 4f5793c108119abe' \
   -d '{
-    "repository": "wasborn14/prj_text_editor_rag_v1",
+    "repository": "wasborn14/test-editor",
     "force": false
   }'
 
@@ -142,7 +142,7 @@ curl -X POST http://160.251.211.37/api/search \
   -H 'Authorization: Bearer 4f5793c108119abe' \
   -d '{
     "query": "VPS設定",
-    "repository": "wasborn14/prj_text_editor_rag_v1",
+    "repository": "wasborn14/test-editor",
     "limit": 3
   }'
 ```
@@ -186,7 +186,7 @@ docker-compose exec rag-api env | grep RAG_API_KEY
 ```json
 {
   "status": "success",
-  "repository": "wasborn14/prj_text_editor_rag_v1",
+  "repository": "wasborn14/test-editor",
   "files_synced": 20,
   "message": "Successfully synced 20 files"
 }
@@ -211,7 +211,77 @@ docker-compose exec rag-api env | grep RAG_API_KEY
 }
 ```
 
-## 5. パフォーマンス確認
+## 5. ChromaDB コレクション管理
+
+### 保存されているコレクション確認
+
+#### 全コレクション一覧取得
+
+```
+curl -X GET http://localhost:8001/api/admin/collections \
+  -H 'Authorization: Bearer 4f5793c108119abe'
+```
+
+返却例：
+
+```json
+{
+  "collections": [
+    {
+      "name": "repo_1234abcd",
+      "probable_repo": "wasborn14/test-editor",
+      "document_count": 15
+    },
+    {
+      "name": "repo_5678efgh",
+      "probable_repo": "wasborn14/prj_text_editor_rag_v1",
+      "document_count": 20
+    }
+  ]
+}
+```
+
+#### 特定リポジトリのデータ確認
+
+```
+# test-editorのデータ確認
+curl -X GET "http://localhost:8001/api/admin/collection/wasborn14%2Ftest-editor/peek?limit=3" \
+  -H 'Authorization: Bearer 4f5793c108119abe'
+
+# prj_text_editor_rag_v1のデータ確認
+curl -X GET "http://localhost:8001/api/admin/collection/wasborn14%2Fprj_text_editor_rag_v1/peek?limit=3" \
+  -H 'Authorization: Bearer 4f5793c108119abe'
+```
+
+#### 不要なコレクション削除
+
+```
+# 特定コレクション削除（ハッシュ名を指定）
+curl -X DELETE "http://localhost:8001/api/admin/collections/repo_6b4b5e04" \
+  -H 'Authorization: Bearer 4f5793c108119abe'
+```
+
+#### 全データクリア（開発時のみ）
+
+```
+# Dockerボリューム削除で全データクリア
+docker-compose down -v
+docker-compose up -d
+```
+
+### VPS での確認
+
+```
+# VPSでコレクション一覧確認
+curl -X GET http://160.251.211.37/api/admin/collections \
+  -H 'Authorization: Bearer 4f5793c108119abe'
+
+# 特定リポジトリのデータ確認
+curl -X GET "http://160.251.211.37/api/admin/collection/wasborn14%2Ftest-editor/peek" \
+  -H 'Authorization: Bearer 4f5793c108119abe'
+```
+
+## 6. パフォーマンス確認
 
 ### レスポンス時間測定
 
@@ -219,12 +289,12 @@ docker-compose exec rag-api env | grep RAG_API_KEY
 # 同期処理時間
 time curl -X POST http://160.251.211.37/api/sync \
   -H 'Authorization: Bearer 4f5793c108119abe' \
-  -d '{"repository": "wasborn14/prj_text_editor_rag_v1"}'
+  -d '{"repository": "wasborn14/test-editor"}'
 
 # 検索処理時間
 time curl -X POST http://160.251.211.37/api/search \
   -H 'Authorization: Bearer 4f5793c108119abe' \
-  -d '{"query": "Docker設定", "repository": "wasborn14/prj_text_editor_rag_v1"}'
+  -d '{"query": "Docker設定", "repository": "wasborn14/test-editor"}'
 ```
 
 ### リソース使用量確認
@@ -244,11 +314,19 @@ sudo docker-compose -f docker-compose.prod.yml exec rag-api df -h
 
 リファクタリング後も全てのエンドポイントが正常に動作することを確認してください。
 
+### 基本機能
+
 - ✅ ヘルスチェック
 - ✅ 同期機能
 - ✅ 検索機能
 - ✅ ディレクトリ検索
 - ✅ リポジトリ構造取得
 - ✅ チャット機能（モック）
+
+### 管理機能
+
+- ✅ コレクション一覧確認
+- ✅ リポジトリデータ確認
+- ✅ 不要なコレクション削除
 
 エラーが発生した場合は、Docker ログとエラーメッセージを確認して対処してください。
