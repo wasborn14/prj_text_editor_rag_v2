@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # ルーターインポート
-from routers import search, sync, repository, chat, admin
+from routers import search, sync, repository, chat, admin, debug
 
 # 環境変数読み込み
 load_dotenv()
@@ -30,6 +30,7 @@ app.include_router(sync.router)
 app.include_router(repository.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
+app.include_router(debug.router)
 
 # ルートエンドポイント
 @app.get("/")

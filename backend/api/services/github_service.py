@@ -59,7 +59,7 @@ class GitHubService:
             print(f"Error exploring {path}: {e}")
             return []
 
-    def get_markdown_files(self, repo_name: str, limit: int = 50) -> List[Dict]:
+    def get_markdown_files(self, repo_name: str, limit: int = 100) -> List[Dict]:
         """
         全階層から.mdファイルを取得（制限付き）
         """
@@ -69,10 +69,22 @@ class GitHubService:
             # 再帰的に全ファイルを取得
             all_files = self.get_all_markdown_files(repo_name)
 
-            # サイズ順でソート（小さいファイルから）
-            all_files.sort(key=lambda x: x.get('size', 0))
+            # 重要度でソート（パス名でアーキテクチャ関連を優先）
+            def priority_score(file):
+                path = file['path'].lower()
+                # アーキテクチャ関連ファイルを優先
+                if 'architecture' in path or 'design' in path:
+                    return 0
+                elif file['name'] == 'README.md':
+                    return 1
+                elif file['depth'] <= 1:  # ルートに近いファイルを優先
+                    return 2
+                else:
+                    return 3 + file['depth']
 
-            # 制限適用
+            all_files.sort(key=priority_score)
+
+            # 制限適用（デフォルト100に増加）
             limited_files = all_files[:limit]
 
             print(f"Total files found: {len(all_files)}, returning: {len(limited_files)}")
