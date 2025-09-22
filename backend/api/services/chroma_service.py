@@ -1,16 +1,35 @@
-"""ChromaDB サービス - シンプル版"""
+"""ChromaDB サービス - 高精度版"""
 import chromadb
+from chromadb.utils import embedding_functions
 from typing import List, Dict
 import os
 import hashlib
 
 class ChromaService:
     def __init__(self):
-        # ChromaDBクライアント初期化（新しい方法）
-        # ローカルの永続化クライアントを使用
+        # ChromaDBクライアント初期化
         self.client = chromadb.PersistentClient(
             path="/data/chromadb"
         )
+
+        # 高精度なEmbedding関数を設定
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if openai_api_key:
+            # OpenAI Embedding（1536次元、多言語対応）
+            self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
+                api_key=openai_api_key,
+                model_name="text-embedding-ada-002"
+            )
+            print("Using OpenAI Embedding (text-embedding-ada-002)")
+        else:
+            # フォールバック: 多言語対応モデル
+            self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="sentence-transformers/distiluse-base-multilingual-cased"
+            )
+            print("Using Multilingual Sentence Transformer")
+
+        # デバッグ用
+        print(f"Embedding function: {type(self.embedding_function).__name__}")
 
     def get_or_create_collection(self, repo_name: str):
         """コレクション取得または作成"""
@@ -18,9 +37,15 @@ class ChromaService:
         collection_name = f"repo_{hashlib.md5(repo_name.encode()).hexdigest()[:8]}"
 
         try:
-            return self.client.get_collection(name=collection_name)
+            return self.client.get_collection(
+                name=collection_name,
+                embedding_function=self.embedding_function
+            )
         except:
-            return self.client.create_collection(name=collection_name)
+            return self.client.create_collection(
+                name=collection_name,
+                embedding_function=self.embedding_function
+            )
 
     def split_into_chunks(self, text: str, chunk_size: int = 500) -> List[str]:
         """テキストをチャンクに分割"""
@@ -119,6 +144,7 @@ class ChromaService:
         except Exception as e:
             print(f"Search error: {e}")
             return []
+
 
     def search_by_directory(self, repo_name: str, directory: str, query: str, n_results: int = 5) -> List[Dict]:
         """特定ディレクトリ内での検索"""

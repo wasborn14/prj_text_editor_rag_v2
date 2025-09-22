@@ -46,7 +46,7 @@ curl -X POST http://localhost:8001/api/sync \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer 4f5793c108119abe' \
   -d '{
-    "repository": "wasborn14/test-editor",
+    "repository": "wasborn14/test-editor-docs",
     "force": false
   }'
 ```
