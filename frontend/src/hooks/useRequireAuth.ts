@@ -1,13 +1,15 @@
 import { useLayoutEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuthStore } from '@/stores/authStore'
 
 /**
  * 認証が必要なページで使用するカスタムフック
  * 未認証の場合は指定されたパスにリダイレクト
  */
 export function useRequireAuth(redirectTo: string = '/') {
-  const { user, profile, loading } = useAuth()
+  const user = useAuthStore((state) => state.user)
+  const profile = useAuthStore((state) => state.profile)
+  const loading = useAuthStore((state) => state.loading)
   const router = useRouter()
 
   useLayoutEffect(() => {

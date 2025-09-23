@@ -1,13 +1,13 @@
 'use client'
 
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuthStore } from '@/stores/authStore'
 import { useRedirectIfAuthenticated } from '@/hooks/useRedirectIfAuthenticated'
 import { Button } from '@/components/atoms/Button/Button'
 import LoadingScreen from '@/components/molecules/LoadingScreen/LoadingScreen'
 
 export default function Home() {
   const { loading, isRedirecting } = useRedirectIfAuthenticated('/dashboard')
-  const { signInWithGitHub } = useAuth()
+  const signInWithGitHub = useAuthStore((state) => state.signInWithGitHub)
 
   const handleSignIn = async () => {
     try {

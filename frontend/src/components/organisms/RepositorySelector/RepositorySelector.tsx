@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuthStore } from '@/stores/authStore'
 import { UserRepository, GitHubRepository } from '@/types'
 import { Button } from '@/components/atoms/Button/Button'
 import LoadingSpinner from '@/components/atoms/LoadingSpinner/LoadingSpinner'
@@ -15,7 +15,8 @@ export default function RepositorySelector({
   onRepositorySelect,
   className = ''
 }: RepositorySelectorProps) {
-  const { user, githubToken } = useAuth()
+  const user = useAuthStore((state) => state.user)
+  const githubToken = useAuthStore((state) => state.githubToken)
   const [userRepos, setUserRepos] = useState<UserRepository[]>([])
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([])
   const [selectedRepo, setSelectedRepo] = useState<UserRepository | null>(null)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/atoms/Button/Button'
 import { Avatar } from '@/components/atoms/Avatar/Avatar'
 
@@ -13,7 +13,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ profile }: HeaderProps) => {
-  const { signOut } = useAuth()
+  const signOut = useAuthStore((state) => state.signOut)
 
   return (
     <header className="bg-white shadow-sm border-b">
