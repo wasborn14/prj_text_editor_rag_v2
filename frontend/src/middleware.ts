@@ -2,19 +2,36 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-// 認証が必要なパス
-const protectedPaths = [
-  '/dashboard',
-  '/repository-setup',
-  '/editor',
-  '/settings',
+/**
+ * 認証不要パス（Allow List方式）
+ * ここに記載されていないパスは全て認証必須になります
+ */
+const publicPaths = [
+  '/',          // ホーム（ランディングページ）
+  '/login',     // ログインページ
+  '/signup',    // サインアップページ
+  '/about',     // 会社概要（誰でもアクセス可能）
+  '/contact',   // お問い合わせ（誰でもアクセス可能）
+  '/privacy',   // プライバシーポリシー（誰でもアクセス可能）
+  '/terms',     // 利用規約（誰でもアクセス可能）
 ]
 
-// 認証が不要なパス（ログイン後はアクセス不可）
-const authPaths = [
-  '/',
-  '/login',
-  '/signup',
+/**
+ * パターンマッチング用の認証不要パス
+ */
+const publicPathPatterns = [
+  /^\/docs\/.*/,     // ドキュメント
+  /^\/api-docs\/.*/, // API仕様書
+]
+
+/**
+ * 未認証ユーザー専用パス（認証済みならダッシュボードにリダイレクト）
+ * publicPathsのサブセット
+ */
+const unauthenticatedOnlyPaths = [
+  '/',        // ランディングページ
+  '/login',   // ログインページ
+  '/signup',  // サインアップページ
 ]
 
 export async function middleware(request: NextRequest) {
@@ -77,16 +94,20 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname
 
-  // 保護されたパスへのアクセス
-  if (protectedPaths.some(protectedPath => path.startsWith(protectedPath))) {
+  // パブリックパスかチェック（完全一致 + パターンマッチ）
+  const isPublicPath = publicPaths.includes(path) ||
+                      publicPathPatterns.some(pattern => pattern.test(path))
+
+  // 認証が必要なパス（パブリックパス以外）
+  if (!isPublicPath) {
     if (!session) {
       // 未認証の場合はホームページへリダイレクト
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
-  // 認証済みユーザーが認証ページへアクセスした場合
-  if (authPaths.includes(path)) {
+  // 認証済みユーザーが未認証専用ページへアクセスした場合
+  if (unauthenticatedOnlyPaths.includes(path)) {
     if (session) {
       // 既に認証済みの場合はダッシュボードへリダイレクト
       return NextResponse.redirect(new URL('/dashboard', request.url))
