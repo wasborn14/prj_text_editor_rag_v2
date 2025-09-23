@@ -134,6 +134,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     const supabase = createClient()
 
+    // stateクリア
     set({
       user: null,
       session: null,
@@ -141,12 +142,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       githubToken: null,
       selectedRepository: null,
       repositorySetupCompleted: false,
+      loading: false,
     })
 
-    const { error } = await supabase.auth.signOut()
-    if (error) {
+    // Supabaseサインアウト
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
       console.error('Sign out error:', error)
     }
+
+    window.location.replace('/')
   },
 
   checkRepositorySelection: async () => {
