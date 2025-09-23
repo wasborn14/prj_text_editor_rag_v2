@@ -9,7 +9,15 @@ export async function POST(request: NextRequest) {
 
     // 認証状態確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json(
+        { error: 'Authentication error', message: authError.message },
+        { status: 401 }
+      )
+    }
+    if (!user) {
+      console.error('No user found')
       return NextResponse.json(
         { error: 'Unauthorized', message: 'User not authenticated' },
         { status: 401 }
@@ -26,32 +34,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // トランザクション処理で選択状態を変更
-    const { error } = await supabase.rpc('select_repository', {
-      p_user_id: user.id,
-      p_repository_id: body.repository_id
-    })
+    // 対象リポジトリが存在するかチェック
+    const { data: targetRepo, error: repoCheckError } = await supabase
+      .from('user_repositories')
+      .select('id')
+      .eq('id', body.repository_id)
+      .eq('user_id', user.id)
+      .single()
 
-    if (error) {
-      if (error.message?.includes('not found')) {
-        return NextResponse.json(
-          { error: 'Repository not found', message: 'Repository does not exist or access denied' },
-          { status: 404 }
-        )
-      }
-      throw error
+    if (repoCheckError || !targetRepo) {
+      return NextResponse.json(
+        { error: 'Repository not found', message: 'Repository does not exist or access denied' },
+        { status: 404 }
+      )
     }
 
-    // 選択されたリポジトリと以前選択されていたリポジトリを取得
-    const { data: selectedRepo, error: selectError } = await supabase
+    // 他のリポジトリの選択状態をfalseに変更
+    const { error: deselectError } = await supabase
+      .from('user_repositories')
+      .update({ is_selected: false })
+      .eq('user_id', user.id)
+
+    if (deselectError) {
+      throw deselectError
+    }
+
+    // 指定されたリポジトリをtrueに変更
+    const { error: selectError } = await supabase
+      .from('user_repositories')
+      .update({ is_selected: true })
+      .eq('id', body.repository_id)
+      .eq('user_id', user.id)
+
+    if (selectError) {
+      throw selectError
+    }
+
+    // 選択されたリポジトリの情報を取得
+    const { data: selectedRepo, error: fetchError } = await supabase
       .from('user_repositories')
       .select('*')
       .eq('id', body.repository_id)
       .eq('user_id', user.id)
       .single()
 
-    if (selectError) {
-      throw selectError
+    if (fetchError) {
+      throw fetchError
     }
 
     return NextResponse.json({
