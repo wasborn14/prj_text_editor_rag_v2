@@ -105,7 +105,67 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/profile - プロフィール更新
+// PUT /api/profile - プロフィール完全更新
+export async function PUT(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    // 認証状態確認
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'User not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    // リクエストボディ解析
+    const body: CreateProfileRequest = await request.json()
+
+    // バリデーション
+    if (!body.github_id || !body.display_name) {
+      return NextResponse.json(
+        { error: 'Validation error', message: 'Required fields missing' },
+        { status: 400 }
+      )
+    }
+
+    // プロフィール完全更新
+    const profileData = {
+      github_username: body.github_username,
+      github_id: body.github_id,
+      display_name: body.display_name,
+      avatar_url: body.avatar_url,
+    }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .update(profileData)
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Profile not found', message: 'Profile does not exist' },
+          { status: 404 }
+        )
+      }
+      throw error
+    }
+
+    return NextResponse.json({ data: profile })
+  } catch (error) {
+    console.error('Profile PUT error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error', message: 'Failed to update profile' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/profile - プロフィール部分更新
 export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient()

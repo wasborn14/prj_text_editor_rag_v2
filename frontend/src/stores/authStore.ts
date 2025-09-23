@@ -21,7 +21,7 @@ interface AuthState {
   signInWithGitHub: () => Promise<void>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
-  createOrUpdateProfile: (user: User) => Promise<void>
+  ensureProfile: (user: User) => Promise<void>
   initialize: () => Promise<void>
 }
 
@@ -57,24 +57,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  createOrUpdateProfile: async (user: User) => {
+  ensureProfile: async (user: User) => {
     try {
-      const getResponse = await fetch('/api/profile')
+      // GitHubから最新のプロフィール情報を構築
+      const profileData = {
+        github_username: user.user_metadata?.user_name || null,
+        github_id: parseInt(user.user_metadata?.provider_id || '0'),
+        display_name: user.user_metadata?.full_name || user.email || 'Unknown User',
+        avatar_url: user.user_metadata?.avatar_url || null,
+      }
 
-      if (getResponse.ok) {
-        const result = await getResponse.json()
+      // 既存プロフィールの更新を試行
+      const putResponse = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      })
+
+      if (putResponse.ok) {
+        // 更新成功
+        const result = await putResponse.json()
         set({ profile: result.data })
         return
       }
 
-      if (getResponse.status === 404) {
-        const profileData = {
-          github_username: user.user_metadata?.user_name || null,
-          github_id: parseInt(user.user_metadata?.provider_id || '0'),
-          display_name: user.user_metadata?.full_name || user.email || 'Unknown User',
-          avatar_url: user.user_metadata?.avatar_url || null,
-        }
-
+      // プロフィールが存在しない場合は新規作成
+      if (putResponse.status === 404) {
         const postResponse = await fetch('/api/profile', {
           method: 'POST',
           headers: {
@@ -90,10 +100,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           console.error('Profile creation failed:', await postResponse.text())
         }
       } else {
-        console.error('Unexpected error checking profile:', await getResponse.text())
+        console.error('Profile update failed:', await putResponse.text())
       }
     } catch (error) {
-      console.error('Unexpected error in createOrUpdateProfile:', error)
+      console.error('Unexpected error in ensureProfile:', error)
     }
   },
 
@@ -139,10 +149,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       loading: false,
     })
 
-    const { createOrUpdateProfile, refreshProfile } = get()
+    const { ensureProfile, refreshProfile } = get()
 
     if (session?.user) {
-      await createOrUpdateProfile(session.user)
+      await ensureProfile(session.user)
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -154,7 +164,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       })
 
       if (event === 'SIGNED_IN' && session?.user) {
-        await createOrUpdateProfile(session.user)
+        await ensureProfile(session.user)
       } else if (event === 'SIGNED_OUT') {
         set({ profile: null })
       } else if (session?.user && !get().profile) {
