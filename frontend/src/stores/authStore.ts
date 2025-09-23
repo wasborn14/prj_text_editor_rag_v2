@@ -22,6 +22,9 @@ interface AuthState {
   setSelectedRepository: (repo: UserRepository | null) => void
   setRepositorySetupCompleted: (completed: boolean) => void
 
+  startLoading: () => void
+  stopLoading: () => void
+
   signInWithGitHub: () => Promise<void>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -46,6 +49,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setGithubToken: (githubToken) => set({ githubToken }),
   setSelectedRepository: (selectedRepository) => set({ selectedRepository }),
   setRepositorySetupCompleted: (repositorySetupCompleted) => set({ repositorySetupCompleted }),
+
+  startLoading: () => set({ loading: true }),
+  stopLoading: () => set({ loading: false }),
 
   refreshProfile: async () => {
     const { user } = get()
@@ -142,8 +148,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       githubToken: null,
       selectedRepository: null,
       repositorySetupCompleted: false,
-      loading: false,
     })
+    get().stopLoading()
 
     // Supabaseサインアウト
     try {
@@ -189,36 +195,52 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       session,
       user: session?.user ?? null,
       githubToken: session?.provider_token || null,
-      loading: false,
     })
 
-    const { ensureProfile, refreshProfile, checkRepositorySelection } = get()
+    const { ensureProfile, checkRepositorySelection, startLoading, stopLoading } = get()
 
     if (session?.user) {
+      startLoading() // プロファイルとリポジトリ選択状態の確認中
       await ensureProfile(session.user)
       await checkRepositorySelection()
+      stopLoading() // 全ての初期化処理が完了
+    } else {
+      stopLoading()
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
+      const { ensureProfile, refreshProfile, checkRepositorySelection, startLoading, stopLoading } = get()
+
+      // 基本的なセッション情報を更新
       set({
         session,
         user: session?.user ?? null,
         githubToken: session?.provider_token || null,
-        loading: false,
       })
 
       if (event === 'SIGNED_IN' && session?.user) {
+        // サインイン時: プロファイルとリポジトリ選択状態を確認
+        startLoading()
         await ensureProfile(session.user)
         await checkRepositorySelection()
+        stopLoading()
       } else if (event === 'SIGNED_OUT') {
+        // サインアウト時: 全てのユーザー関連データをクリア
         set({
           profile: null,
           selectedRepository: null,
-          repositorySetupCompleted: false
+          repositorySetupCompleted: false,
         })
+        stopLoading()
       } else if (session?.user && !get().profile) {
+        // その他（既存セッション等）: プロファイルがない場合のみ取得
+        startLoading()
         await refreshProfile()
         await checkRepositorySelection()
+        stopLoading()
+      } else {
+        // それ以外: ローディング解除のみ
+        stopLoading()
       }
     })
   },

@@ -14,16 +14,11 @@ export function useRequireRepositorySelection() {
   const router = useRouter()
 
   useLayoutEffect(() => {
-    // ローディング中は何もしない
-    if (loading) return
-
-    // 未認証の場合は認証系フックに任せる
-    if (!user) return
+    if (loading || !user) return
 
     // リポジトリ選択が完了していない場合
     if (!repositorySetupCompleted || !selectedRepository) {
       router.replace('/repository-setup')
-      return
     }
   }, [selectedRepository, repositorySetupCompleted, loading, user, router])
 
