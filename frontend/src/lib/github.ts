@@ -21,11 +21,14 @@ export class GitHubClient {
     return data.map(repo => ({
       id: repo.id,
       name: repo.name,
+      full_name: repo.full_name,
       fullName: repo.full_name,
       description: repo.description,
       private: repo.private,
+      default_branch: repo.default_branch || 'main',
       defaultBranch: repo.default_branch || 'main',
       updatedAt: repo.updated_at,
+      pushed_at: repo.pushed_at,
       language: repo.language,
       owner: repo.owner.login,
     }))

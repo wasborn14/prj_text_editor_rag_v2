@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { UserRepository, GitHubRepository } from '@/types'
 import { Button } from '@/components/atoms/Button/Button'
@@ -25,7 +25,7 @@ export default function RepositorySelector({
   const [showGitHubRepos, setShowGitHubRepos] = useState(false)
 
   // ユーザーのリポジトリ一覧を取得
-  const fetchUserRepositories = async () => {
+  const fetchUserRepositories = useCallback(async () => {
     if (!user) return
 
     try {
@@ -49,7 +49,7 @@ export default function RepositorySelector({
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, onRepositorySelect])
 
   // GitHubからリポジトリ一覧を取得
   const fetchGitHubRepositories = async () => {
@@ -140,7 +140,7 @@ export default function RepositorySelector({
     if (user) {
       fetchUserRepositories()
     }
-  }, [user])
+  }, [user, fetchUserRepositories])
 
   if (loading && userRepos.length === 0) {
     return (

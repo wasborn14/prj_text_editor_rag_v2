@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase'
 import { User, Session } from '@supabase/supabase-js'
-import { Profile } from '@/types'
+import { Profile, UserRepository } from '@/types'
 
 interface AuthState {
   user: User | null
@@ -11,17 +11,22 @@ interface AuthState {
   profile: Profile | null
   loading: boolean
   githubToken: string | null
+  selectedRepository: UserRepository | null
+  repositorySetupCompleted: boolean
 
   setUser: (user: User | null) => void
   setSession: (session: Session | null) => void
   setProfile: (profile: Profile | null) => void
   setLoading: (loading: boolean) => void
   setGithubToken: (token: string | null) => void
+  setSelectedRepository: (repo: UserRepository | null) => void
+  setRepositorySetupCompleted: (completed: boolean) => void
 
   signInWithGitHub: () => Promise<void>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
   ensureProfile: (user: User) => Promise<void>
+  checkRepositorySelection: () => Promise<void>
   initialize: () => Promise<void>
 }
 
@@ -31,12 +36,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   loading: true,
   githubToken: null,
+  selectedRepository: null,
+  repositorySetupCompleted: false,
 
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
   setGithubToken: (githubToken) => set({ githubToken }),
+  setSelectedRepository: (selectedRepository) => set({ selectedRepository }),
+  setRepositorySetupCompleted: (repositorySetupCompleted) => set({ repositorySetupCompleted }),
 
   refreshProfile: async () => {
     const { user } = get()
@@ -130,11 +139,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       session: null,
       profile: null,
       githubToken: null,
+      selectedRepository: null,
+      repositorySetupCompleted: false,
     })
 
     const { error } = await supabase.auth.signOut()
     if (error) {
       console.error('Sign out error:', error)
+    }
+  },
+
+  checkRepositorySelection: async () => {
+    const { user } = get()
+    if (!user) return
+
+    try {
+      const response = await fetch('/api/repositories/selected')
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.data?.selected_repository) {
+          set({
+            selectedRepository: result.data.selected_repository,
+            repositorySetupCompleted: true
+          })
+        } else {
+          set({ repositorySetupCompleted: false })
+        }
+      } else {
+        set({ repositorySetupCompleted: false })
+      }
+    } catch (error) {
+      console.error('Repository selection check failed:', error)
+      set({ repositorySetupCompleted: false })
     }
   },
 
@@ -149,10 +186,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       loading: false,
     })
 
-    const { ensureProfile, refreshProfile } = get()
+    const { ensureProfile, refreshProfile, checkRepositorySelection } = get()
 
     if (session?.user) {
       await ensureProfile(session.user)
+      await checkRepositorySelection()
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -165,10 +203,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (event === 'SIGNED_IN' && session?.user) {
         await ensureProfile(session.user)
+        await checkRepositorySelection()
       } else if (event === 'SIGNED_OUT') {
-        set({ profile: null })
+        set({
+          profile: null,
+          selectedRepository: null,
+          repositorySetupCompleted: false
+        })
       } else if (session?.user && !get().profile) {
         await refreshProfile()
+        await checkRepositorySelection()
       }
     })
   },
