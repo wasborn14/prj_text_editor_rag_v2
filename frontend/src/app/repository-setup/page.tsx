@@ -114,7 +114,7 @@ export default function RepositorySetupPage() {
                         <span className="ml-2">Setting up...</span>
                       </>
                     ) : (
-                      'Continue to Dashboard'
+                      'Continue to Workspace'
                     )}
                   </Button>
 

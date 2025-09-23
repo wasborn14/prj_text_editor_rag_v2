@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
  * 認証済みユーザーを指定のパスにリダイレクトするフック
  * ランディングページなど、未認証ユーザー向けのページで使用
  */
-export function useRedirectIfAuthenticated(redirectTo: string = '/dashboard') {
+export function useRedirectIfAuthenticated(redirectTo: string = '/workspace') {
   const user = useAuthStore((state) => state.user)
   const loading = useAuthStore((state) => state.loading)
   const router = useRouter()

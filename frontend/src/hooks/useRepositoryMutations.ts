@@ -100,8 +100,8 @@ export function useCreateAndSelectRepository() {
       setSelectedRepository(createdRepo)
       setRepositorySetupCompleted(true)
 
-      // Navigate to dashboard
-      router.push('/dashboard')
+      // Navigate to workspace
+      router.push('/workspace')
     },
     onError: (error) => {
       console.error('Repository creation/selection failed:', error)

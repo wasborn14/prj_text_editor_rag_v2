@@ -8,7 +8,7 @@ import { Button } from '@/components/atoms/Button/Button'
 import { Header } from '@/components/organisms/Header/Header'
 import LoadingScreen from '@/components/molecules/LoadingScreen/LoadingScreen'
 
-export default function DashboardPage() {
+export default function WorkspacePage() {
   const { user, profile, loading: authLoading } = useRequireAuth()
   const { selectedRepository, loading: repoLoading, isReady } = useRequireRepositorySelection()
   const loading = authLoading || repoLoading

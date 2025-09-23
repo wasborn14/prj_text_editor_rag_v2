@@ -110,7 +110,7 @@ export async function middleware(request: NextRequest) {
   if (unauthenticatedOnlyPaths.includes(path)) {
     if (session) {
       // 既に認証済みの場合はダッシュボードへリダイレクト
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      return NextResponse.redirect(new URL('/workspace', request.url))
     }
   }
 

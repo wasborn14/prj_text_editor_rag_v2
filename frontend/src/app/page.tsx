@@ -6,7 +6,7 @@ import { Button } from '@/components/atoms/Button/Button'
 import LoadingScreen from '@/components/molecules/LoadingScreen/LoadingScreen'
 
 export default function Home() {
-  const { loading, isRedirecting } = useRedirectIfAuthenticated('/dashboard')
+  const { loading, isRedirecting } = useRedirectIfAuthenticated('/workspace')
   const signInWithGitHub = useAuthStore((state) => state.signInWithGitHub)
 
   const handleSignIn = async () => {
