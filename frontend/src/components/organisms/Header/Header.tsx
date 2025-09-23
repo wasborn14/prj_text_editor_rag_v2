@@ -4,42 +4,58 @@ import { useAuth } from '@/providers/AuthProvider'
 import { Button } from '@/components/atoms/Button/Button'
 import { Avatar } from '@/components/atoms/Avatar/Avatar'
 
-export const Header = () => {
-  const { user, loading, signInWithGitHub, signOut } = useAuth()
+interface HeaderProps {
+  profile?: {
+    avatar_url?: string | null
+    display_name?: string | null
+    github_username?: string | null
+  } | null
+}
 
-  if (loading) {
-    return (
-      <div className="h-16 border-b flex items-center justify-between px-6">
-        <h1 className="text-xl font-bold">RAG Documentation Search</h1>
-        <div className="w-24 h-8 bg-gray-200 animate-pulse rounded" />
-      </div>
-    )
-  }
+export const Header = ({ profile }: HeaderProps) => {
+  const { signOut } = useAuth()
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-6">
-      <h1 className="text-xl font-bold">Github Editor</h1>
-
-      {user ? (
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Avatar
-              src={user.user_metadata?.avatar_url}
-              alt={user.user_metadata?.full_name || 'User'}
-            />
-            <span className="text-sm font-medium">
-              {user.user_metadata?.full_name || user.email}
-            </span>
+    <header className="bg-white shadow-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center">
+            <h1 className="text-xl font-semibold text-gray-900">
+              RAG Text Editor
+            </h1>
           </div>
-          <Button variant="ghost" onClick={signOut}>
-            Sign Out
-          </Button>
+
+          <div className="flex items-center space-x-4">
+            {profile && (
+              <div className="flex items-center space-x-3">
+                <Avatar
+                  src={profile.avatar_url || undefined}
+                  alt={profile.display_name || 'User'}
+                  size="sm"
+                />
+                <div className="hidden sm:block">
+                  <div className="text-sm font-medium text-gray-900">
+                    {profile.display_name}
+                  </div>
+                  {profile.github_username && (
+                    <div className="text-xs text-gray-500">
+                      @{profile.github_username}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={signOut}
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
-      ) : (
-        <Button onClick={signInWithGitHub}>
-          Sign in with GitHub
-        </Button>
-      )}
+      </div>
     </header>
   )
 }

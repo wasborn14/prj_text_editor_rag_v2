@@ -1,17 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '@/providers/AuthProvider'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { UserRepository } from '@/types'
 import RepositorySelector from '@/components/organisms/RepositorySelector/RepositorySelector'
 import { Button } from '@/components/atoms/Button/Button'
-import { Avatar } from '@/components/atoms/Avatar/Avatar'
+import { Header } from '@/components/organisms/Header/Header'
 import LoadingScreen from '@/components/molecules/LoadingScreen/LoadingScreen'
 
 export default function DashboardPage() {
   const { user, profile, loading } = useRequireAuth()
-  const { signOut } = useAuth()
   const [selectedRepository, setSelectedRepository] = useState<UserRepository | null>(null)
 
   const handleRepositorySelect = (repository: UserRepository) => {
@@ -30,48 +28,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
-                RAG Text Editor
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {profile && (
-                <div className="flex items-center space-x-3">
-                  <Avatar
-                    src={profile.avatar_url || undefined}
-                    alt={profile.display_name || 'User'}
-                    size="sm"
-                  />
-                  <div className="hidden sm:block">
-                    <div className="text-sm font-medium text-gray-900">
-                      {profile.display_name}
-                    </div>
-                    {profile.github_username && (
-                      <div className="text-xs text-gray-500">
-                        @{profile.github_username}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={signOut}
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header profile={profile} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
