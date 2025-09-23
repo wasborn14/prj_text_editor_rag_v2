@@ -15,8 +15,7 @@ export class GitHubClient {
     const { data } = await this.octokit.repos.listForAuthenticatedUser({
       sort: options?.sort || 'updated',
       per_page: options?.per_page || 50,
-      type: options?.type || 'all',
-      visibility: 'public'
+      type: options?.type || 'all'
     })
 
     return data.map(repo => ({
