@@ -18,7 +18,7 @@ export const Header = () => {
 
   return (
     <header className="h-16 border-b flex items-center justify-between px-6">
-      <h1 className="text-xl font-bold">RAG Documentation Search</h1>
+      <h1 className="text-xl font-bold">Github Editor</h1>
 
       {user ? (
         <div className="flex items-center gap-4">
