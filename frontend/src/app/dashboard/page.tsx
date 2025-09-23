@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/providers/AuthProvider'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { UserRepository } from '@/types'
 import RepositorySelector from '@/components/organisms/RepositorySelector/RepositorySelector'
 import { Button } from '@/components/atoms/Button/Button'
 import { Avatar } from '@/components/atoms/Avatar/Avatar'
 
 export default function DashboardPage() {
-  const { user, profile, signOut, loading } = useAuth()
+  const { user, profile, loading } = useRequireAuth()
+  const { signOut } = useAuth()
   const [selectedRepository, setSelectedRepository] = useState<UserRepository | null>(null)
 
   if (loading) {
@@ -22,19 +24,9 @@ export default function DashboardPage() {
     )
   }
 
+  // ミドルウェアまたはlayoutで認証チェックされるため、ここには到達しない
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Authentication Required
-          </h1>
-          <p className="text-gray-600">
-            Please sign in to access the dashboard.
-          </p>
-        </div>
-      </div>
-    )
+    return null
   }
 
   const handleRepositorySelect = (repository: UserRepository) => {
