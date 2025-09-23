@@ -20,10 +20,10 @@ export interface ApiError {
 export type ProfileResponse = ApiResponse<Profile>
 
 export interface CreateProfileRequest {
-  github_username: string
+  github_username: string | null
   github_id: number
   display_name: string
-  avatar_url: string
+  avatar_url: string | null
 }
 
 export interface UpdateProfileRequest {

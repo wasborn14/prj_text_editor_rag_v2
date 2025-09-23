@@ -12,7 +12,8 @@ export interface GitHubUser {
   updated_at: string
 }
 
-export interface GitHubRepository {
+// GitHub API response type (raw from API)
+export interface GitHubApiRepository {
   id: number
   name: string
   full_name: string
@@ -40,6 +41,19 @@ export interface GitHubRepository {
     triage: boolean
     pull: boolean
   }
+}
+
+// Processed repository type (transformed by GitHub client)
+export interface GitHubRepository {
+  id: number
+  name: string
+  fullName: string
+  description: string | null
+  private: boolean
+  defaultBranch: string
+  updatedAt: string
+  language: string | null
+  owner: string
 }
 
 export interface GitHubContent {

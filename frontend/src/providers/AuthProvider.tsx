@@ -1,15 +1,18 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User, Session } from '@supabase/supabase-js'
+import { Profile } from '@/types'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
+  profile: Profile | null
   loading: boolean
   signInWithGitHub: () => Promise<void>
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
   githubToken: string | null
 }
 
@@ -26,8 +29,70 @@ export const useAuth = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [githubToken, setGithubToken] = useState<string | null>(null)
+
+  const refreshProfile = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const response = await fetch('/api/profile')
+      if (response.ok) {
+        const result = await response.json()
+        setProfile(result.data)
+      } else {
+        console.error('Profile fetch failed:', await response.text())
+        setProfile(null)
+      }
+    } catch (error) {
+      console.error('Unexpected error in refreshProfile:', error)
+      setProfile(null)
+    }
+  }, [user])
+
+  const createOrUpdateProfile = async (user: User) => {
+    try {
+      // まず既存プロフィールを確認
+      const getResponse = await fetch('/api/profile')
+
+      if (getResponse.ok) {
+        // 既存プロフィールが見つかった場合
+        const result = await getResponse.json()
+        setProfile(result.data)
+        return
+      }
+
+      // プロフィールが存在しない場合のみ作成
+      if (getResponse.status === 404) {
+        const profileData = {
+          github_username: user.user_metadata?.user_name || null,
+          github_id: parseInt(user.user_metadata?.provider_id || '0'),
+          display_name: user.user_metadata?.full_name || user.email || 'Unknown User',
+          avatar_url: user.user_metadata?.avatar_url || null,
+        }
+
+        const postResponse = await fetch('/api/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(profileData),
+        })
+
+        if (postResponse.ok) {
+          const result = await postResponse.json()
+          setProfile(result.data)
+        } else {
+          console.error('Profile creation failed:', await postResponse.text())
+        }
+      } else {
+        console.error('Unexpected error checking profile:', await getResponse.text())
+      }
+    } catch (error) {
+      console.error('Unexpected error in createOrUpdateProfile:', error)
+    }
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -59,37 +124,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
 
       if (event === 'SIGNED_IN' && session?.user) {
-        await createProfile(session.user)
+        await createOrUpdateProfile(session.user)
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setProfile(null)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const createProfile = async (user: User) => {
-    try {
-      const supabase = createClient()
-
-      const profile = {
-        id: user.id,
-        github_username: user.user_metadata?.user_name || null,
-        display_name: user.user_metadata?.full_name || user.email || 'Unknown User',
-        avatar_url: user.user_metadata?.avatar_url || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(profile, { onConflict: 'id' })
-
-      if (error) {
-        console.error('Profile creation error:', error)
-      }
-    } catch (error) {
-      console.error('Unexpected error in createProfile:', error)
+  // プロフィール取得のための別のuseEffect
+  useEffect(() => {
+    if (user && !profile) {
+      refreshProfile()
     }
-  }
+  }, [user, profile, refreshProfile])
 
   const signInWithGitHub = async () => {
     const supabase = createClient()
@@ -111,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(null)
     setSession(null)
+    setProfile(null)
     setGithubToken(null)
 
     const { error } = await supabase.auth.signOut()
@@ -123,9 +175,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       user,
       session,
+      profile,
       loading,
       signInWithGitHub,
       signOut,
+      refreshProfile,
       githubToken,
     }}>
       {children}

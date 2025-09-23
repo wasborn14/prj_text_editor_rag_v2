@@ -7,11 +7,15 @@ export class GitHubClient {
     this.octokit = new Octokit({ auth: accessToken })
   }
 
-  async getUserRepos() {
+  async getUserRepos(options?: {
+    sort?: 'updated' | 'created' | 'full_name'
+    per_page?: number
+    type?: 'all' | 'owner' | 'member'
+  }) {
     const { data } = await this.octokit.repos.listForAuthenticatedUser({
-      sort: 'updated',
-      per_page: 50,
-      type: 'all',
+      sort: options?.sort || 'updated',
+      per_page: options?.per_page || 50,
+      type: options?.type || 'all',
       visibility: 'public'
     })
 
