@@ -1,39 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/AuthProvider'
+import { useRedirectIfAuthenticated } from '@/hooks/useRedirectIfAuthenticated'
 import { Button } from '@/components/atoms/Button/Button'
 import LoadingSpinner from '@/components/atoms/LoadingSpinner/LoadingSpinner'
 
 export default function Home() {
-  const { user, loading, signInWithGitHub } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard')
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    )
-  }
-
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    )
-  }
+  const { loading, isRedirecting } = useRedirectIfAuthenticated('/dashboard')
+  const { signInWithGitHub } = useAuth()
 
   const handleSignIn = async () => {
     try {
@@ -42,6 +16,21 @@ export default function Home() {
       console.error('Sign in failed:', error)
     }
   }
+
+  // ローディング中またはリダイレクト中の表示
+  if (loading || isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="flex flex-col items-center justify-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600 text-center">
+            Loading...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
