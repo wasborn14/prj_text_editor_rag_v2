@@ -7,31 +7,26 @@ import { UserRepository } from '@/types'
 import RepositorySelector from '@/components/organisms/RepositorySelector/RepositorySelector'
 import { Button } from '@/components/atoms/Button/Button'
 import { Avatar } from '@/components/atoms/Avatar/Avatar'
+import LoadingScreen from '@/components/molecules/LoadingScreen/LoadingScreen'
 
 export default function DashboardPage() {
   const { user, profile, loading } = useRequireAuth()
   const { signOut } = useAuth()
   const [selectedRepository, setSelectedRepository] = useState<UserRepository | null>(null)
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+  const handleRepositorySelect = (repository: UserRepository) => {
+    setSelectedRepository(repository)
   }
 
-  // ミドルウェアまたはlayoutで認証チェックされるため、ここには到達しない
+  if (loading) {
+    return <LoadingScreen />
+  }
+
+  // userが存在しない場合に表示しないよう制御
   if (!user) {
     return null
   }
 
-  const handleRepositorySelect = (repository: UserRepository) => {
-    setSelectedRepository(repository)
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
