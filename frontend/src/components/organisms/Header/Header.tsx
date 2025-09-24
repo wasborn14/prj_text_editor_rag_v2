@@ -3,6 +3,7 @@
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/atoms/Button/Button'
 import { Avatar } from '@/components/atoms/Avatar/Avatar'
+import { UserRepository } from '@/types'
 
 interface HeaderProps {
   profile?: {
@@ -10,19 +11,31 @@ interface HeaderProps {
     display_name?: string | null
     github_username?: string | null
   } | null
+  selectedRepository?: UserRepository | null
 }
 
-export const Header = ({ profile }: HeaderProps) => {
+export const Header = ({ profile, selectedRepository }: HeaderProps) => {
   const signOut = useAuthStore((state) => state.signOut)
 
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             <h1 className="text-xl font-semibold text-gray-900">
               RAG Text Editor
             </h1>
+            {selectedRepository && (
+              <>
+                <div className="text-gray-300">|</div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-lg font-medium text-gray-700">
+                    {selectedRepository.full_name}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
