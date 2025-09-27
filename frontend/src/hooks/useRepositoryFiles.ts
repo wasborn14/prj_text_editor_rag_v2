@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FileTreeNode } from '@/components/molecules/FileTree/FileTree'
+import { FileTreeNode } from '@/components/organisms/Sidebar/FileTreeItem'
 
 interface RepositoryFilesResponse {
   contents: FileTreeNode[]
