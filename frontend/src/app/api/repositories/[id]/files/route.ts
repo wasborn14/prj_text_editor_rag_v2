@@ -90,7 +90,7 @@ function buildFileTree(treeItems: GitHubTreeItem[]): FileTreeNode[] {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -106,18 +106,21 @@ export async function GET(
       }
     )
 
+    const { data: { user } } = await supabase.auth.getUser()
     const { data: { session } } = await supabase.auth.getSession()
 
-    if (!session?.user) {
+    if (!user || !session?.provider_token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { id } = await params
 
     // リポジトリ情報を取得
     const { data: repository, error: repoError } = await supabase
       .from('user_repositories')
       .select('*')
-      .eq('id', params.id)
-      .eq('user_id', session.user.id)
+      .eq('id', id)
+      .eq('user_id', user.id)
       .single()
 
     if (repoError || !repository) {
