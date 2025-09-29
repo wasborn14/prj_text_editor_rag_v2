@@ -1,0 +1,226 @@
+/* Novel Editor Notion-style CSS */
+.ProseMirror {
+  outline: none !important;
+  border: none !important;
+  padding: 1.5rem;
+  line-height: 1.6;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+.ProseMirror h1 {
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin: 2rem 0 1rem 0 !important;
+  color: #111827 !important;
+}
+
+.ProseMirror h2 {
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 1.5rem 0 0.75rem 0 !important;
+  color: #1f2937 !important;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin: 1.25rem 0 0.5rem 0 !important;
+  color: #374151 !important;
+}
+
+.ProseMirror h4 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin: 1rem 0 0.5rem 0 !important;
+  color: #4b5563 !important;
+}
+
+.ProseMirror h5 {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin: 0.875rem 0 0.5rem 0 !important;
+  color: #6b7280 !important;
+}
+
+.ProseMirror h6 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin: 0.75rem 0 0.5rem 0 !important;
+  color: #9ca3af !important;
+}
+
+.ProseMirror p {
+  font-size: 1rem !important;
+  line-height: 1.7 !important;
+  margin: 0.75rem 0 !important;
+  color: #4b5563 !important;
+}
+
+.ProseMirror ul {
+  margin: 1rem 0 !important;
+  padding-left: 1.5rem !important;
+}
+
+.ProseMirror ol {
+  margin: 1rem 0 !important;
+  padding-left: 1.5rem !important;
+}
+
+.ProseMirror li {
+  font-size: 1rem !important;
+  line-height: 1.6 !important;
+  margin: 0.25rem 0 !important;
+  color: #4b5563 !important;
+}
+
+.ProseMirror li p {
+  margin: 0 !important;
+}
+
+/* Code blocks - Notion風スタイル */
+.ProseMirror pre {
+  background-color: #1e1e1e !important; /* 暗い背景 */
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  overflow-x: auto !important;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  color: #d4d4d4 !important;
+  border: 1px solid #3e3e3e !important;
+}
+
+.ProseMirror pre code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-size: inherit !important;
+}
+
+/* Inline code */
+.ProseMirror code {
+  background-color: #f3f4f6 !important;
+  padding: 0.125rem 0.25rem !important;
+  border-radius: 0.25rem !important;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+  font-size: 0.875rem !important;
+  color: #dc2626 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Blockquotes */
+.ProseMirror blockquote {
+  border-left: 4px solid #e5e7eb !important;
+  margin: 1rem 0 !important;
+  padding-left: 1rem !important;
+  color: #6b7280 !important;
+  font-style: italic !important;
+  background-color: #f9fafb !important;
+  padding: 1rem !important;
+  border-radius: 0 0.5rem 0.5rem 0 !important;
+}
+
+.ProseMirror blockquote p {
+  color: inherit !important;
+  margin: 0.5rem 0 !important;
+}
+
+.ProseMirror blockquote p:first-child {
+  margin-top: 0 !important;
+}
+
+.ProseMirror blockquote p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Placeholder styling */
+.ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+  font-size: 1rem;
+}
+
+/* Selection styling */
+.ProseMirror-selectednode {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px;
+}
+
+/* Focus styling */
+.ProseMirror-focused {
+  outline: none !important;
+}
+
+/* Table styling */
+.ProseMirror table {
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  width: 100% !important;
+  margin: 1rem 0 !important;
+  border: 2px solid #4b5563 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+  box-shadow: 0 -2px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 4px 0 rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border: 1px solid #d1d5db !important;
+  padding: 0.75rem !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  min-width: 100px !important;
+}
+
+.ProseMirror th {
+  background-color: #f9fafb !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+}
+
+.ProseMirror td {
+  background-color: #ffffff !important;
+  color: #4b5563 !important;
+}
+
+.ProseMirror .selectedCell:after {
+  z-index: 2 !important;
+  position: absolute !important;
+  content: "" !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  pointer-events: none !important;
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute !important;
+  right: -2px !important;
+  top: 0 !important;
+  bottom: -2px !important;
+  width: 4px !important;
+  background-color: #3b82f6 !important;
+  pointer-events: none !important;
+}
+
+.ProseMirror table p {
+  margin: 0 !important;
+}
