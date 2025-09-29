@@ -1,13 +1,15 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { EditorRoot, EditorContent, useEditor, StarterKit } from 'novel'
+import { EditorRoot, EditorContent, useEditor } from 'novel'
 import '@/styles/novel.css'
 import { NovelContent, NovelEditor } from '@/types/prosemirror'
+import StarterKit from '@tiptap/starter-kit'
 import Table from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
 import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
+import { Extension } from '@tiptap/core'
 
 interface SlashCommand {
   id: string
@@ -16,116 +18,131 @@ interface SlashCommand {
   action: (editor: NovelEditor) => void
 }
 
-const SlashCommandMenu = ({ editor, onClose }: { editor: NovelEditor; onClose: () => void }) => {
+// スラッシュコマンドの定義（定数として分離）
+const SLASH_COMMANDS: SlashCommand[] = [
+  {
+    id: 'h1',
+    label: 'Heading 1',
+    icon: 'H1',
+    action: (editor) => editor.chain().focus().setHeading({ level: 1 }).run()
+  },
+  {
+    id: 'h2',
+    label: 'Heading 2',
+    icon: 'H2',
+    action: (editor) => editor.chain().focus().setHeading({ level: 2 }).run()
+  },
+  {
+    id: 'h3',
+    label: 'Heading 3',
+    icon: 'H3',
+    action: (editor) => editor.chain().focus().setHeading({ level: 3 }).run()
+  },
+  {
+    id: 'paragraph',
+    label: 'Text',
+    icon: '¶',
+    action: (editor) => editor.chain().focus().setParagraph().run()
+  },
+  {
+    id: 'bullet',
+    label: 'Bullet List',
+    icon: '•',
+    action: (editor) => editor.chain().focus().toggleBulletList().run()
+  },
+  {
+    id: 'number',
+    label: 'Numbered List',
+    icon: '1.',
+    action: (editor) => editor.chain().focus().toggleOrderedList().run()
+  },
+  {
+    id: 'quote',
+    label: 'Quote',
+    icon: '"',
+    action: (editor) => editor.chain().focus().toggleBlockquote().run()
+  },
+  {
+    id: 'code',
+    label: 'Code Block',
+    icon: '</>',
+    action: (editor) => editor.chain().focus().setCodeBlock().run()
+  },
+  {
+    id: 'table',
+    label: 'Table',
+    icon: '⊞',
+    action: (editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+  }
+]
+
+// Enterキー処理の共通ロジック
+const executeSlashCommand = (editor: NovelEditor, command: SlashCommand, onClose: () => void) => {
+  // 現在の選択範囲を取得
+  const { from } = editor.state.selection
+
+  // スラッシュを削除（選択位置はそのまま維持）
+  editor
+    .chain()
+    .focus()
+    .deleteRange({ from: from - 1, to: from })
+    .run()
+
+  // エディタの更新を待ってからコマンドを実行
+  editor.chain().focus().run()
+
+  // コマンドを実行
+  command.action(editor)
+  onClose()
+}
+
+const SlashCommandMenu = ({ editor, onClose, showMenu }: { editor: NovelEditor; onClose: () => void; showMenu: boolean }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
   // const [search, setSearch] = useState('')  // 一旦非表示
   const search = ''  // 検索は無効化
 
-  const commands: SlashCommand[] = [
-    {
-      id: 'h1',
-      label: 'Heading 1',
-      icon: 'H1',
-      action: (editor) => {
-        editor.chain().focus().toggleHeading({ level: 1 }).run()
-      }
-    },
-    {
-      id: 'h2',
-      label: 'Heading 2',
-      icon: 'H2',
-      action: (editor) => {
-        editor.chain().focus().toggleHeading({ level: 2 }).run()
-      }
-    },
-    {
-      id: 'h3',
-      label: 'Heading 3',
-      icon: 'H3',
-      action: (editor) => {
-        editor.chain().focus().toggleHeading({ level: 3 }).run()
-      }
-    },
-    {
-      id: 'paragraph',
-      label: 'Text',
-      icon: '¶',
-      action: (editor) => {
-        editor.chain().focus().setParagraph().run()
-      }
-    },
-    {
-      id: 'bullet',
-      label: 'Bullet List',
-      icon: '•',
-      action: (editor) => {
-        editor.chain().focus().toggleBulletList().run()
-      }
-    },
-    {
-      id: 'number',
-      label: 'Numbered List',
-      icon: '1.',
-      action: (editor) => {
-        editor.chain().focus().toggleOrderedList().run()
-      }
-    },
-    {
-      id: 'quote',
-      label: 'Quote',
-      icon: '"',
-      action: (editor) => {
-        editor.chain().focus().toggleBlockquote().run()
-      }
-    },
-    {
-      id: 'code',
-      label: 'Code Block',
-      icon: '</>',
-      action: (editor) => {
-        editor.chain().focus().setCodeBlock().run()
-      }
-    },
-    {
-      id: 'table',
-      label: 'Table',
-      icon: '⊞',
-      action: (editor) => {
-        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-      }
-    }
-  ]
+  // 定数として抽出（再利用可能）
+  const commands = SLASH_COMMANDS
 
   const filteredCommands = commands.filter(cmd =>
     cmd.label.toLowerCase().includes(search.toLowerCase())
   )
 
   useEffect(() => {
+    // メニューが開いていないときは何もしない
+    if (!showMenu) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      // メニューが開いているときのみ処理
+      if (!showMenu) return
+
       if (e.key === 'ArrowDown') {
         e.preventDefault()
+        e.stopPropagation()
         setSelectedIndex((prev) => (prev + 1) % filteredCommands.length)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
+        e.stopPropagation()
         setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length)
       } else if (e.key === 'Enter') {
         e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+
         if (filteredCommands[selectedIndex]) {
-          // Remove the slash
-          editor.chain().focus().deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }).run()
-          // Execute command
-          filteredCommands[selectedIndex].action(editor)
-          onClose()
+          executeSlashCommand(editor, filteredCommands[selectedIndex], onClose)
         }
       } else if (e.key === 'Escape') {
         e.preventDefault()
+        e.stopPropagation()
         onClose()
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIndex, filteredCommands, editor, onClose])
+    // キャプチャフェーズでイベントを捕まえる（ProseMirrorより先に実行）
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [selectedIndex, filteredCommands, editor, onClose, showMenu])
 
   return (
     <div className="absolute z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -145,9 +162,7 @@ const SlashCommandMenu = ({ editor, onClose }: { editor: NovelEditor; onClose: (
           <button
             key={cmd.id}
             onClick={() => {
-              editor.chain().focus().deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }).run()
-              cmd.action(editor)
-              onClose()
+              executeSlashCommand(editor, cmd, onClose)
             }}
             className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
               index === selectedIndex ? 'bg-gray-100' : ''
@@ -241,6 +256,29 @@ const TableToolbar = ({ editor, onClose }: { editor: NovelEditor; onClose: () =>
   )
 }
 
+// カスタムExtension: メニューが開いているときにEnterキーを無効化
+const SlashMenuExtension = Extension.create({
+  name: 'slashMenu',
+
+  addStorage() {
+    return {
+      menuOpen: false,
+    }
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        // メニューが開いている場合はEnterキーのデフォルト動作を無効化
+        if (this.storage.menuOpen) {
+          return true // trueを返すとデフォルト動作を止める
+        }
+        return false
+      },
+    }
+  },
+})
+
 export const NovelWithMenu = ({ content, onChange }: { content?: NovelContent, onChange?: (content: NovelContent) => void }) => {
   const [showMenu, setShowMenu] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
@@ -253,12 +291,34 @@ export const NovelWithMenu = ({ content, onChange }: { content?: NovelContent, o
     useEffect(() => {
       if (!editor) return
 
+      // SlashMenuExtensionのストレージにメニューの状態を保存
+      const slashMenuExt = editor.extensionManager.extensions.find(
+        ext => ext.name === 'slashMenu'
+      )
+      if (slashMenuExt) {
+        slashMenuExt.storage.menuOpen = showMenu
+      }
+
+      // SlashMenuExtensionがあれば、それに任せる（重複した処理を削除）
+    }, [editor, showMenu]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+      if (!editor) return
+
       const handleUpdate = () => {
-        const { from } = editor.state.selection
+        const { $from, from } = editor.state.selection
+
+        // 現在のノード（段落など）の開始位置を取得
+        const nodeStart = $from.start()
+
+        // カーソル位置の直前の文字を取得
         const text = editor.state.doc.textBetween(Math.max(0, from - 1), from)
 
-        // Check for slash command
-        if (text === '/') {
+        // 段落の開始位置からカーソルまでのテキストを取得
+        const textFromStart = editor.state.doc.textBetween(nodeStart, from)
+
+        // Check for slash command - 段落の最初でのみ開く
+        if (text === '/' && textFromStart === '/') {
           // Get cursor position
           const { view } = editor
           const coords = view.coordsAtPos(from)
@@ -337,6 +397,7 @@ export const NovelWithMenu = ({ content, onChange }: { content?: NovelContent, o
             <SlashCommandMenu
               editor={editor}
               onClose={() => setShowMenu(false)}
+              showMenu={showMenu}
             />
           </div>
         )}
@@ -365,6 +426,7 @@ export const NovelWithMenu = ({ content, onChange }: { content?: NovelContent, o
         <EditorContent
           extensions={[
             StarterKit,
+            SlashMenuExtension,
             Table.configure({
               resizable: true,
             }),
