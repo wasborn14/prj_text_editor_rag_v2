@@ -20,6 +20,9 @@ export const EditorContent = ({ className = '' }: EditorContentProps) => {
 
   const activeTab = openTabs.find(tab => tab.id === activeTabId) || null
 
+  // サンプル表示の切り替えフラグ
+  const isSample = false  // true にするとサンプル内容を表示
+
   const handleNovelChange = (content: unknown) => {
     if (activeTab) {
       const textContent = convertNovelChange(content)
@@ -60,11 +63,11 @@ export const EditorContent = ({ className = '' }: EditorContentProps) => {
     )
   }
 
-  // テスト用サンプル内容でNovelエディタを使用
+  // エディタ表示
   return (
     <div className={`w-full h-full overflow-auto ${className}`}>
       <NovelWithMenu
-        content={parseToProseMirror(sampleContent)}
+        content={isSample ? parseToProseMirror(sampleContent) : parseToProseMirror(activeTab?.content || '')}
         onChange={handleNovelChange}
       />
     </div>

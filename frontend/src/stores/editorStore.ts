@@ -143,7 +143,8 @@ export const useEditorStore = create<EditorState>()(
             return {
               ...tab,
               content,
-              isDirty: true
+              isDirty: true,
+              isLoading: false // コンテンツ更新時にローディング終了
             }
           }
           return tab

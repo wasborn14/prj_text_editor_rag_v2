@@ -1,11 +1,15 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useEditorStore } from '@/stores/editorStore'
 
 interface FileContentParams {
   repositoryId: string
   filePath: string
   enabled?: boolean
+  onSuccess?: (data: FileContentResponse) => void
+  onError?: (error: Error) => void
 }
 
 interface FileContentResponse {
@@ -33,8 +37,15 @@ const fetchFileContent = async (repositoryId: string, filePath: string): Promise
   return result.data
 }
 
-export const useFileContent = ({ repositoryId, filePath, enabled = true }: FileContentParams) => {
-  return useQuery({
+export const useFileContent = ({
+  repositoryId,
+  filePath,
+  enabled = true,
+  onSuccess,
+  onError
+}: FileContentParams) => {
+  const { updateContent, openTabs, activeTabId } = useEditorStore()
+  const query = useQuery({
     queryKey: ['file-content', repositoryId, filePath],
     queryFn: () => fetchFileContent(repositoryId, filePath),
     enabled: enabled && !!repositoryId && !!filePath,
@@ -42,4 +53,33 @@ export const useFileContent = ({ repositoryId, filePath, enabled = true }: FileC
     retry: 1,
     retryDelay: 1000,
   })
+
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      // アクティブタブの内容が空の場合のみ更新
+      const activeTab = openTabs.find(tab => tab.id === activeTabId)
+      if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
+        console.log('FileContent - File content loaded for:', filePath)
+        updateContent(activeTab.id, query.data.content)
+      }
+      // 従来の方式：コールバック
+      onSuccess?.(query.data)
+    }
+  }, [query.isSuccess, query.data, onSuccess, openTabs, activeTabId, updateContent, filePath])
+
+  useEffect(() => {
+    if (query.isError && query.error) {
+      // アクティブタブにエラーメッセージを表示
+      const activeTab = openTabs.find(tab => tab.id === activeTabId)
+      if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
+        console.error('FileContent - Content loading error:', query.error)
+        const errorMessage = `// Failed to load file: ${query.error.message || 'Unknown error'}`
+        updateContent(activeTab.id, errorMessage)
+      }
+      // 従来の方式：コールバック
+      onError?.(query.error)
+    }
+  }, [query.isError, query.error, onError, openTabs, activeTabId, updateContent, filePath])
+
+  return query
 }
