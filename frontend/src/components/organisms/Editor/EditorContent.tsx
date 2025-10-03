@@ -1,11 +1,15 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useCallback } from 'react'
 import '@/styles/novel.css'
 import { useEditorStore } from '@/stores/editorStore'
 import { NovelWithMenu } from './NovelWithMenu'
 import { parseToProseMirror, convertNovelChange } from '@/utils/prosemirror'
 import { sampleContent } from '@/data/sampleContent'
+import { useSaveFile } from '@/hooks/useSaveFile'
+import { useRequireRepositorySelection } from '@/hooks/useRequireRepositorySelection'
+import { useToast } from '@/hooks/useToast'
+import { Toast } from '@/components/atoms/Toast/Toast'
 
 interface EditorContentProps {
   className?: string
@@ -18,6 +22,9 @@ export const EditorContent = ({ className = '' }: EditorContentProps) => {
     updateContent
   } = useEditorStore()
 
+  const { selectedRepository } = useRequireRepositorySelection()
+  const { saveActiveTab, error } = useSaveFile()
+  const { toasts, showSuccess, showError, hideToast } = useToast()
   const activeTab = openTabs.find(tab => tab.id === activeTabId) || null
 
   // サンプル表示の切り替えフラグ
@@ -29,6 +36,42 @@ export const EditorContent = ({ className = '' }: EditorContentProps) => {
       updateContent(activeTab.id, textContent)
     }
   }
+
+  const handleSave = useCallback(async () => {
+    if (!selectedRepository || !activeTab) {
+      showError('No repository or active tab to save')
+      return
+    }
+
+    try {
+      const success = await saveActiveTab(
+        selectedRepository.id,
+        selectedRepository.owner,
+        selectedRepository.name
+      )
+      if (success) {
+        showSuccess(`${activeTab.name} saved successfully`)
+      } else {
+        showError(`Failed to save ${activeTab.name}: ${error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      showError(`Save error: ${errorMessage}`)
+    }
+  }, [selectedRepository, activeTab, saveActiveTab, error, showSuccess, showError])
+
+  // Cmd+S / Ctrl+S キーボードショートカット
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        handleSave()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleSave])
 
 
   // アクティブタブがない場合のウェルカム画面
@@ -65,11 +108,24 @@ export const EditorContent = ({ className = '' }: EditorContentProps) => {
 
   // エディタ表示
   return (
-    <div className={`w-full h-full overflow-auto ${className}`}>
-      <NovelWithMenu
-        content={isSample ? parseToProseMirror(sampleContent) : parseToProseMirror(activeTab?.content || '')}
-        onChange={handleNovelChange}
-      />
-    </div>
+    <>
+      <div className={`w-full h-full overflow-auto ${className}`}>
+        <NovelWithMenu
+          content={isSample ? parseToProseMirror(sampleContent) : parseToProseMirror(activeTab?.content || '')}
+          onChange={handleNovelChange}
+        />
+      </div>
+
+      {/* Toast notifications */}
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          duration={toast.duration}
+          onClose={() => hideToast(toast.id)}
+        />
+      ))}
+    </>
   )
 }

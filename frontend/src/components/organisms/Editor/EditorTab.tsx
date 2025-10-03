@@ -53,8 +53,15 @@ export const EditorTab = ({
         <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
       )}
 
+      {/* Saving indicator */}
+      {tab.isSaving && (
+        <div className="w-4 h-4 mr-2 animate-pulse">
+          <span className="text-blue-500 text-xs">⏳</span>
+        </div>
+      )}
+
       {/* File icon */}
-      {!tab.isLoading && (
+      {!tab.isLoading && !tab.isSaving && (
         <div className="w-4 h-4 mr-2 flex-shrink-0">
           <Icon
             type={getFileIconType(tab.name)}
@@ -67,8 +74,11 @@ export const EditorTab = ({
       {/* File name */}
       <span className="flex-1 truncate">
         {tab.name}
-        {tab.isDirty && (
-          <span className="ml-1 text-orange-500 font-bold">●</span>
+        {tab.isDirty && !tab.isSaving && (
+          <span className="ml-1 text-orange-500 font-bold" title="Unsaved changes">●</span>
+        )}
+        {!tab.isDirty && !tab.isSaving && tab.lastSaved && (
+          <span className="ml-1 text-green-500 font-bold" title={`Saved at ${tab.lastSaved.toLocaleTimeString()}`}>✓</span>
         )}
       </span>
 

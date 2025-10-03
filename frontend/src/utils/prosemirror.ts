@@ -236,8 +236,118 @@ export const proseMirrorToPlainText = (doc: unknown): string => {
 }
 
 /**
+ * ProseMirrorドキュメントをMarkdownに変換
+ */
+export const proseMirrorToMarkdown = (doc: unknown): string => {
+  if (!doc || typeof doc !== 'object') {
+    return ''
+  }
+
+  const pmDoc = doc as ProseMirrorDoc
+  if (!pmDoc.content || !Array.isArray(pmDoc.content)) {
+    return ''
+  }
+
+  const lines: string[] = []
+
+  for (const node of pmDoc.content) {
+    const markdown = nodeToMarkdown(node)
+    if (markdown) {
+      lines.push(markdown)
+    }
+  }
+
+  return lines.join('\n\n')
+}
+
+/**
+ * ProseMirrorノードをMarkdownに変換
+ */
+const nodeToMarkdown = (node: ProseMirrorNode): string => {
+  switch (node.type) {
+    case 'heading':
+      const level = node.attrs?.level || 1
+      const headingText = extractText(node)
+      return `${'#'.repeat(level)} ${headingText}`
+
+    case 'paragraph':
+      return extractText(node)
+
+    case 'codeBlock':
+      const language = node.attrs?.language || ''
+      const code = extractText(node)
+      return `\`\`\`${language}\n${code}\n\`\`\``
+
+    case 'bulletList':
+      return node.content?.map(item => {
+        const text = extractText(item)
+        return `- ${text}`
+      }).join('\n') || ''
+
+    case 'orderedList':
+      return node.content?.map((item, index) => {
+        const text = extractText(item)
+        return `${index + 1}. ${text}`
+      }).join('\n') || ''
+
+    case 'blockquote':
+      const quoteText = extractText(node)
+      return `> ${quoteText}`
+
+    case 'table':
+      return tableToMarkdown(node as ProseMirrorTableNode)
+
+    default:
+      return extractText(node)
+  }
+}
+
+/**
+ * ノードからテキストを抽出
+ */
+const extractText = (node: ProseMirrorNode | undefined): string => {
+  if (!node || !node.content) {
+    return ''
+  }
+
+  return node.content.map(child => {
+    if (child.type === 'text') {
+      return child.text || ''
+    }
+    if (child.type === 'paragraph' || child.type === 'listItem') {
+      return extractText(child)
+    }
+    return ''
+  }).join('')
+}
+
+/**
+ * テーブルをMarkdownに変換
+ */
+const tableToMarkdown = (table: ProseMirrorTableNode): string => {
+  if (!table.content || table.content.length === 0) {
+    return ''
+  }
+
+  const rows = table.content.map((row, rowIndex) => {
+    const cells = row.content?.map(cell => extractText(cell)) || []
+    return `| ${cells.join(' | ')} |`
+  })
+
+  // ヘッダー区切り行を追加
+  if (rows.length > 0 && table.content[0].content) {
+    const headerCells = table.content[0].content.length
+    const separator = `| ${Array(headerCells).fill('---').join(' | ')} |`
+    rows.splice(1, 0, separator)
+  }
+
+  return rows.join('\n')
+}
+
+/**
  * Novel エディタからの変更を処理用のテキストに変換
  */
 export const convertNovelChange = (content: unknown): string => {
-  return content ? JSON.stringify(content) : ''
+  // Markdownに変換してから返す
+  return proseMirrorToMarkdown(content)
 }

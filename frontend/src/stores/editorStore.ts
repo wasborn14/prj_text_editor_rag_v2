@@ -11,6 +11,9 @@ export interface EditorTab {
   isDirty: boolean
   language: string
   isLoading: boolean
+  isSaving: boolean
+  lastSaved?: Date
+  sha?: string
 }
 
 interface EditorState {
@@ -24,8 +27,10 @@ interface EditorState {
   closeAllTabs: () => void
 
   // ファイル操作
-  updateContent: (tabId: string, content: string) => void
+  updateContent: (tabId: string, content: string, sha?: string) => void
+  updateSha: (tabId: string, sha: string) => void
   setLoading: (tabId: string, loading: boolean) => void
+  setSaving: (tabId: string, saving: boolean) => void
   markSaved: (tabId: string) => void
 
   // ヘルパー
@@ -89,7 +94,8 @@ export const useEditorStore = create<EditorState>()(
           content: '',
           isDirty: false,
           language: getLanguageFromPath(file.path),
-          isLoading: true
+          isLoading: true,
+          isSaving: false
         }
 
         set({
@@ -136,7 +142,7 @@ export const useEditorStore = create<EditorState>()(
         })
       },
 
-      updateContent: (tabId, content) => {
+      updateContent: (tabId, content, sha) => {
         const { openTabs } = get()
         const updatedTabs = openTabs.map(tab => {
           if (tab.id === tabId) {
@@ -144,8 +150,21 @@ export const useEditorStore = create<EditorState>()(
               ...tab,
               content,
               isDirty: true,
-              isLoading: false // コンテンツ更新時にローディング終了
+              isLoading: false, // コンテンツ更新時にローディング終了
+              ...(sha && { sha })
             }
+          }
+          return tab
+        })
+
+        set({ openTabs: updatedTabs })
+      },
+
+      updateSha: (tabId, sha) => {
+        const { openTabs } = get()
+        const updatedTabs = openTabs.map(tab => {
+          if (tab.id === tabId) {
+            return { ...tab, sha }
           }
           return tab
         })
@@ -165,11 +184,28 @@ export const useEditorStore = create<EditorState>()(
         set({ openTabs: updatedTabs })
       },
 
+      setSaving: (tabId, saving) => {
+        const { openTabs } = get()
+        const updatedTabs = openTabs.map(tab => {
+          if (tab.id === tabId) {
+            return { ...tab, isSaving: saving }
+          }
+          return tab
+        })
+
+        set({ openTabs: updatedTabs })
+      },
+
       markSaved: (tabId) => {
         const { openTabs } = get()
         const updatedTabs = openTabs.map(tab => {
           if (tab.id === tabId) {
-            return { ...tab, isDirty: false }
+            return {
+              ...tab,
+              isDirty: false,
+              isSaving: false,
+              lastSaved: new Date()
+            }
           }
           return tab
         })

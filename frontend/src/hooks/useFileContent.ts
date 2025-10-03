@@ -60,7 +60,7 @@ export const useFileContent = ({
       const activeTab = openTabs.find(tab => tab.id === activeTabId)
       if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
         console.log('FileContent - File content loaded for:', filePath)
-        updateContent(activeTab.id, query.data.content)
+        updateContent(activeTab.id, query.data.content, query.data.sha)
       }
       // 従来の方式：コールバック
       onSuccess?.(query.data)
