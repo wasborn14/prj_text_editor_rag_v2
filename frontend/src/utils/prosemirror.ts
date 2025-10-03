@@ -306,19 +306,29 @@ const nodeToMarkdown = (node: ProseMirrorNode): string => {
  * ノードからテキストを抽出
  */
 const extractText = (node: ProseMirrorNode | undefined): string => {
-  if (!node || !node.content) {
+  if (!node) {
     return ''
   }
 
-  return node.content.map(child => {
-    if (child.type === 'text') {
-      return child.text || ''
-    }
-    if (child.type === 'paragraph' || child.type === 'listItem') {
-      return extractText(child)
-    }
-    return ''
-  }).join('')
+  // TextNodeの場合
+  if (node.type === 'text') {
+    return node.text || ''
+  }
+
+  // contentプロパティを持つノードの場合
+  if ('content' in node && node.content) {
+    return node.content.map(child => {
+      if (child.type === 'text') {
+        return child.text || ''
+      }
+      if (child.type === 'paragraph' || child.type === 'listItem') {
+        return extractText(child)
+      }
+      return ''
+    }).join('')
+  }
+
+  return ''
 }
 
 /**

@@ -150,7 +150,7 @@ export const useEditorStore = create<EditorState>()(
               ...tab,
               content,
               isDirty: true,
-              isLoading: false, // コンテンツ更新時にローディング終了
+              isLoading: false,
               ...(sha && { sha })
             }
           }
