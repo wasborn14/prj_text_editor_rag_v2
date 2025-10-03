@@ -123,14 +123,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithGitHub: async () => {
+    console.log('signInWithGitHub: Starting...')
     const supabase = createClient()
+    console.log('signInWithGitHub: Supabase client created')
+
+    const redirectTo = `${window.location.origin}/`
+    console.log('signInWithGitHub: Redirect URL:', redirectTo)
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo,
         scopes: 'repo read:user user:email',
       },
     })
+
+    console.log('signInWithGitHub: OAuth call completed, error:', error)
 
     if (error) {
       throw new Error(`GitHub authentication failed: ${error.message}`)
