@@ -1,12 +1,12 @@
 # RAG-Powered Markdown Editor
 
-VPS RAGバックエンドとNext.jsフロントエンドを組み合わせたMarkdownエディタープロジェクト
+VPS RAG バックエンドと Next.js フロントエンドを組み合わせた Markdown エディタープロジェクト
 
 ## 🏗️ アーキテクチャ
 
-- **Backend**: FastAPI + ChromaDB (VPS展開)
+- **Backend**: FastAPI + ChromaDB (VPS 展開)
 - **Frontend**: Next.js + TypeScript (開発予定)
-- **RAG**: セマンティック検索とGitHub統合
+- **RAG**: セマンティック検索と GitHub 統合
 - **Deployment**: Docker + Nginx + SSL
 
 ## 📁 プロジェクト構成
@@ -30,7 +30,8 @@ prj_text_editor_rag_v1/
 
 ## 🚀 クイックスタート
 
-### VPS展開
+### VPS 展開
+
 ```bash
 # 1. リポジトリクローン
 git clone https://github.com/your-username/prj_text_editor_rag_v1.git
@@ -45,6 +46,7 @@ chmod +x deployment/scripts/deploy_vps.sh
 ```
 
 ### ローカル開発
+
 ```bash
 # バックエンド起動
 cd backend
@@ -69,42 +71,45 @@ curl -X POST http://localhost:8001/api/search \
 
 ## 📊 API エンドポイント
 
-| エンドポイント | メソッド | 説明 |
-|---------------|---------|------|
-| `/health` | GET | ヘルスチェック |
-| `/` | GET | API情報 |
-| `/api/search` | POST | セマンティック検索 |
-| `/api/search/directory` | POST | ディレクトリ検索 |
-| `/api/sync` | POST | リポジトリ同期 |
-| `/api/repository/structure` | GET | リポジトリ構造取得 |
+| エンドポイント              | メソッド | 説明               |
+| --------------------------- | -------- | ------------------ |
+| `/health`                   | GET      | ヘルスチェック     |
+| `/`                         | GET      | API 情報           |
+| `/api/search`               | POST     | セマンティック検索 |
+| `/api/search/directory`     | POST     | ディレクトリ検索   |
+| `/api/sync`                 | POST     | リポジトリ同期     |
+| `/api/repository/structure` | GET      | リポジトリ構造取得 |
 
 ## 📖 ドキュメント
 
 詳細な設定手順は [docs/](./docs/) ディレクトリを参照してください：
 
-- [**VPS展開ガイド**](./docs/10_VPS_DEPLOYMENT_FIRST_STRATEGY.md) - VPS設定と展開手順
-- [**RAGテストガイド**](./docs/08_VPS_RAG_TESTING_GUIDE.md) - 機能テストと使用方法
-- [**LangChain移行計画**](./docs/09_LANGCHAIN_MIGRATION_PLAN.md) - 将来の拡張計画
+- [**VPS 展開ガイド**](./docs/10_VPS_DEPLOYMENT_FIRST_STRATEGY.md) - VPS 設定と展開手順
+- [**RAG テストガイド**](./docs/08_VPS_RAG_TESTING_GUIDE.md) - 機能テストと使用方法
+- [**LangChain 移行計画**](./docs/09_LANGCHAIN_MIGRATION_PLAN.md) - 将来の拡張計画
 
 ## 🎯 ロードマップ
 
 ### Phase 1: VPS RAG (完了)
-- ✅ FastAPI + ChromaDB実装
-- ✅ GitHub API統合
+
+- ✅ FastAPI + ChromaDB 実装
+- ✅ GitHub API 統合
 - ✅ セマンティック検索
-- ✅ Docker化・VPS展開
+- ✅ Docker 化・VPS 展開
 
 ### Phase 2: フロントエンド (開発予定)
+
 - [ ] Next.js + TypeScript セットアップ
 - [ ] CodeMirror エディター統合
-- [ ] RAG API連携UI
+- [ ] RAG API 連携 UI
 - [ ] 認証・ユーザー管理
 
 ### Phase 3: 高度機能 (将来)
-- [ ] LangChain統合
+
+- [ ] LangChain 統合
 - [ ] リアルタイム同期
 - [ ] マルチユーザー対応
-- [ ] Azure移行
+- [ ] Azure 移行
 
 ## 📄 ライセンス
 
