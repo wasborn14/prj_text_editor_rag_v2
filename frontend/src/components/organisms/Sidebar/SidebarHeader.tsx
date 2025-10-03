@@ -1,24 +1,22 @@
 'use client'
 
 import React from 'react'
-import { ViewModeToggle } from '@/components/atoms/ToggleButton/ToggleButton'
-import { Icon } from '@/components/atoms/Icon/Icon'
-import { useSidebarStore, ViewMode } from '@/stores/sidebarStore'
+import { FilePlus, FolderPlus, X } from 'lucide-react'
 
 interface SidebarHeaderProps {
   repositoryName?: string
   onSearch?: (query: string) => void
-  onSettingsClick?: () => void
+  onCreateFile?: () => void
+  onCreateFolder?: () => void
   className?: string
 }
 
 export function SidebarHeader({
-  repositoryName,
   onSearch,
-  onSettingsClick,
+  onCreateFile,
+  onCreateFolder,
   className = ''
 }: SidebarHeaderProps) {
-  const { viewMode, setViewMode } = useSidebarStore()
   const [searchQuery, setSearchQuery] = React.useState('')
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,40 +25,28 @@ export function SidebarHeader({
     onSearch?.(query)
   }
 
-  const handleModeChange = (mode: ViewMode) => {
-    setViewMode(mode)
-  }
-
   return (
     <div className={`bg-white border-b border-gray-200 ${className}`}>
       {/* メインヘッダー */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center space-x-2 min-w-0 flex-1">
-          {repositoryName ? (
-            <h3 className="text-sm font-semibold text-gray-900 truncate">
-              {repositoryName}
-            </h3>
-          ) : (
-            <h3 className="text-sm font-semibold text-gray-500 truncate">
-              No repository selected
-            </h3>
-          )}
-        </div>
-
+      <div className="flex items-center justify-end px-3 py-2">
         <div className="flex items-center space-x-1">
-          <ViewModeToggle
-            currentMode={viewMode}
-            onModeChange={handleModeChange}
-          />
-          {onSettingsClick && (
-            <button
-              onClick={onSettingsClick}
-              className="p-1 rounded hover:bg-gray-100"
-              title="Sidebar Settings"
-            >
-              <Icon type="settings" size="xs" className="text-gray-500" />
-            </button>
-          )}
+          {/* 新規ファイル作成 */}
+          <button
+            onClick={onCreateFile}
+            className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+            title="New File"
+          >
+            <FilePlus className="w-4 h-4 text-gray-600" />
+          </button>
+
+          {/* 新規フォルダ作成 */}
+          <button
+            onClick={onCreateFolder}
+            className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+            title="New Folder"
+          >
+            <FolderPlus className="w-4 h-4 text-gray-600" />
+          </button>
         </div>
       </div>
 
@@ -82,7 +68,7 @@ export function SidebarHeader({
               }}
               className="absolute right-1 top-1/2 transform -translate-y-1/2 p-0.5 rounded hover:bg-gray-100"
             >
-              <Icon type="x" size="xs" className="text-gray-400" />
+              <X className="w-3 h-3 text-gray-400" />
             </button>
           )}
         </div>

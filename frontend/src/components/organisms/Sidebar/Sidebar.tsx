@@ -19,7 +19,6 @@ export function Sidebar({
   files,
   selectedFilePath,
   onFileSelect,
-  repositoryName,
   className = ''
 }: SidebarProps) {
   const { isVisible, width } = useSidebarStore()
@@ -53,11 +52,6 @@ export function Sidebar({
     setSearchQuery(query)
   }
 
-  const handleSettingsClick = () => {
-    // 設定モーダルを開く（将来実装）
-    console.log('Open sidebar settings')
-  }
-
   if (!isVisible) {
     return null
   }
@@ -81,9 +75,7 @@ export function Sidebar({
       <div className="flex flex-col flex-1 min-w-0">
         {/* ヘッダー */}
         <SidebarHeader
-          repositoryName={repositoryName}
           onSearch={handleSearch}
-          onSettingsClick={handleSettingsClick}
         />
 
         {/* コンテンツエリア */}

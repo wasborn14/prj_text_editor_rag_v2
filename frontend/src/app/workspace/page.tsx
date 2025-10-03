@@ -96,8 +96,6 @@ export default function WorkspacePage() {
             files={repositoryFiles.contents}
             selectedFilePath={selectedFile?.path}
             onFileSelect={handleFileSelect}
-            repositoryName={selectedRepository.name}
-            searchEnabled={true}
           />
         ) : null}
 
