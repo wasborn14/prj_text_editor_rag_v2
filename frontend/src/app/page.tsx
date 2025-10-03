@@ -10,6 +10,7 @@ export default function Home() {
   const signInWithGitHub = useAuthStore((state) => state.signInWithGitHub)
 
   const handleSignIn = async () => {
+    console.info("handle signIn called");
     try {
       await signInWithGitHub()
     } catch (error) {

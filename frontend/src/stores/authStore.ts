@@ -123,6 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithGitHub: async () => {
+    console.info("signInWithGitHub called");
     const supabase = createClient()
 
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -137,6 +138,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new Error(`GitHub authentication failed: ${error.message}`)
     }
 
+    console.info("GitHub sign-in initiated:", data)
     // 手動でリダイレクト
     if (data?.url) {
       window.location.href = data.url
