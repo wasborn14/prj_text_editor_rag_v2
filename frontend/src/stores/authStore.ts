@@ -123,30 +123,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithGitHub: async () => {
-    console.log('signInWithGitHub: Starting...')
-    console.log('ENV CHECK - SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('ENV CHECK - SUPABASE_ANON_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-
     const supabase = createClient()
-    console.log('signInWithGitHub: Supabase client created')
-
-    const redirectTo = `${window.location.origin}/`
-    console.log('signInWithGitHub: Redirect URL:', redirectTo)
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo,
+        redirectTo: `${window.location.origin}/`,
         scopes: 'repo read:user user:email',
       },
     })
 
-    console.log('signInWithGitHub: OAuth call completed')
-    console.log('signInWithGitHub: data:', data)
-    console.log('signInWithGitHub: error:', error)
-
     if (error) {
       throw new Error(`GitHub authentication failed: ${error.message}`)
+    }
+
+    // 手動でリダイレクト
+    if (data?.url) {
+      window.location.href = data.url
     }
   },
 

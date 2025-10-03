@@ -10,8 +10,6 @@ export default function Home() {
   const signInWithGitHub = useAuthStore((state) => state.signInWithGitHub)
 
   const handleSignIn = async () => {
-    console.log('=== BUTTON CLICKED ===')
-    console.log('signInWithGitHub function:', signInWithGitHub)
     try {
       await signInWithGitHub()
     } catch (error) {
