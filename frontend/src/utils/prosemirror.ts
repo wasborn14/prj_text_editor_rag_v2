@@ -265,34 +265,48 @@ export const proseMirrorToMarkdown = (doc: unknown): string => {
  */
 const nodeToMarkdown = (node: ProseMirrorNode): string => {
   switch (node.type) {
+    case 'text':
+      return node.text || ''
+
     case 'heading':
-      const level = node.attrs?.level || 1
-      const headingText = extractText(node)
-      return `${'#'.repeat(level)} ${headingText}`
+      if ('attrs' in node && node.attrs) {
+        const level = node.attrs.level || 1
+        const headingText = extractText(node)
+        return `${'#'.repeat(level)} ${headingText}`
+      }
+      return extractText(node)
 
     case 'paragraph':
       return extractText(node)
 
     case 'codeBlock':
-      const language = node.attrs?.language || ''
-      const code = extractText(node)
-      return `\`\`\`${language}\n${code}\n\`\`\``
+      if ('attrs' in node && node.attrs) {
+        const language = node.attrs.language || ''
+        const code = extractText(node)
+        return `\`\`\`${language}\n${code}\n\`\`\``
+      }
+      return extractText(node)
 
     case 'bulletList':
-      return node.content?.map(item => {
-        const text = extractText(item)
-        return `- ${text}`
-      }).join('\n') || ''
+      if ('content' in node && node.content) {
+        return node.content.map(item => {
+          const text = extractText(item)
+          return `- ${text}`
+        }).join('\n')
+      }
+      return ''
 
     case 'orderedList':
-      return node.content?.map((item, index) => {
-        const text = extractText(item)
-        return `${index + 1}. ${text}`
-      }).join('\n') || ''
+      if ('content' in node && node.content) {
+        return node.content.map((item, index) => {
+          const text = extractText(item)
+          return `${index + 1}. ${text}`
+        }).join('\n')
+      }
+      return ''
 
     case 'blockquote':
-      const quoteText = extractText(node)
-      return `> ${quoteText}`
+      return `> ${extractText(node)}`
 
     case 'table':
       return tableToMarkdown(node as ProseMirrorTableNode)
