@@ -80,7 +80,6 @@ export function Sidebar({
       })
 
       if (result?.success) {
-        console.log(`Successfully created ${type}: ${fullPath}`)
 
         // ファイル一覧を更新
         if (onRefresh) {

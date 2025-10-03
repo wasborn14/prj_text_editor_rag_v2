@@ -12,7 +12,6 @@ interface CreateFileInputProps {
 
 export function CreateFileInput({
   type,
-  parentPath,
   onConfirm,
   onCancel
 }: CreateFileInputProps) {
