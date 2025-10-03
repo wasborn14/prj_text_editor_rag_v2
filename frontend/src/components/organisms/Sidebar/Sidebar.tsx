@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { SidebarHeader, SidebarHeaderWithSearch } from './SidebarHeader'
+import { SidebarHeader } from './SidebarHeader'
 import { SidebarContent } from './SidebarContent'
 import { ResizeHandle } from './ResizeHandle'
 import { useSidebarStore, useSidebarKeyboard } from '@/stores/sidebarStore'
@@ -12,7 +12,6 @@ interface SidebarProps {
   selectedFilePath?: string
   onFileSelect: (file: FileTreeNode) => void
   repositoryName?: string
-  searchEnabled?: boolean
   className?: string
 }
 
@@ -21,7 +20,6 @@ export function Sidebar({
   selectedFilePath,
   onFileSelect,
   repositoryName,
-  searchEnabled = false,
   className = ''
 }: SidebarProps) {
   const { isVisible, width } = useSidebarStore()
@@ -82,18 +80,11 @@ export function Sidebar({
       {/* サイドバーのメインコンテンツ */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* ヘッダー */}
-        {searchEnabled ? (
-          <SidebarHeaderWithSearch
-            repositoryName={repositoryName}
-            onSearch={handleSearch}
-            onSettingsClick={handleSettingsClick}
-          />
-        ) : (
-          <SidebarHeader
-            repositoryName={repositoryName}
-            onSettingsClick={handleSettingsClick}
-          />
-        )}
+        <SidebarHeader
+          repositoryName={repositoryName}
+          onSearch={handleSearch}
+          onSettingsClick={handleSettingsClick}
+        />
 
         {/* コンテンツエリア */}
         <SidebarContent
