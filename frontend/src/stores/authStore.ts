@@ -123,7 +123,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithGitHub: async () => {
-    console.info("signInWithGitHub called");
     const supabase = createClient()
 
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -135,15 +134,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     })
 
     if (error) {
+      console.error('GitHub authentication failed:', error)
       throw new Error(`GitHub authentication failed: ${error.message}`)
     }
 
-    console.info("GitHub sign-in initiated:", data)
-    // 手動でリダイレクト
+    // デバッグ: URLを確認
+    console.log('OAuth URL:', data?.url)
+
+    // リダイレクト（これは自動的に行われるはずだが、念のため明示的に実行）
     if (data?.url) {
-      console.info("Redirecting to:", data.url)
-      window.location.href = data.url
-      console.info("Redirect executed")
+      // window.location.href = data.url
+      window.location.href = 'https://google.com'
     }
   },
 
