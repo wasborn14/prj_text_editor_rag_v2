@@ -141,7 +141,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     console.info("GitHub sign-in initiated:", data)
     // 手動でリダイレクト
     if (data?.url) {
+      console.info("Redirecting to:", data.url)
       window.location.href = data.url
+      console.info("Redirect executed")
     }
   },
 
