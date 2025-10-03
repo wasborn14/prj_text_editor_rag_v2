@@ -16,6 +16,12 @@ interface SidebarState {
   // 展開されたフォルダ（ツリービュー用）
   expandedFolders: Set<string>
 
+  // ファイル/フォルダ作成
+  creatingItem: {
+    type: 'file' | 'folder'
+    parentPath: string
+  } | null
+
   // アクション
   toggleVisibility: () => void
   setVisibility: (visible: boolean) => void
@@ -32,6 +38,10 @@ interface SidebarState {
   isExpanded: (folderPath: string) => boolean
   expandFolder: (folderPath: string) => void
   collapseFolder: (folderPath: string) => void
+
+  // ファイル/フォルダ作成管理
+  setCreatingItem: (item: { type: 'file' | 'folder', parentPath: string } | null) => void
+  cancelCreating: () => void
 
   // リセット
   reset: () => void
@@ -51,6 +61,7 @@ export const useSidebarStore = create<SidebarState>()(
       autoHide: false,
       pinnedFiles: [],
       expandedFolders: new Set([]), // ルートフォルダは初期展開
+      creatingItem: null,
 
       // 表示制御
       toggleVisibility: () =>
@@ -108,6 +119,13 @@ export const useSidebarStore = create<SidebarState>()(
           return { expandedFolders: newExpanded }
         }),
 
+      // ファイル/フォルダ作成管理
+      setCreatingItem: (item) =>
+        set({ creatingItem: item }),
+
+      cancelCreating: () =>
+        set({ creatingItem: null }),
+
       // リセット
       reset: () =>
         set({
@@ -116,7 +134,8 @@ export const useSidebarStore = create<SidebarState>()(
           viewMode: 'tree',
           autoHide: false,
           pinnedFiles: [],
-          expandedFolders: new Set([])
+          expandedFolders: new Set([]),
+          creatingItem: null
         })
     }),
     {

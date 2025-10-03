@@ -3,6 +3,7 @@
 import React from 'react'
 import { Icon, getFileIconType } from '@/components/atoms/Icon/Icon'
 import { useSidebarStore } from '@/stores/sidebarStore'
+import { CreateFileInput } from '@/components/molecules/CreateFileInput/CreateFileInput'
 
 export interface FileTreeNode {
   name: string
@@ -18,6 +19,7 @@ interface FileTreeItemProps {
   isSelected: boolean
   onSelect: (node: FileTreeNode) => void
   onToggleExpand?: (path: string) => void
+  onCreateConfirm?: (name: string, type: 'file' | 'folder') => void
   className?: string
 }
 
@@ -27,9 +29,10 @@ export function FileTreeItem({
   isSelected,
   onSelect,
   onToggleExpand,
+  onCreateConfirm,
   className = ''
 }: FileTreeItemProps) {
-  const { isExpanded, toggleFolder, isPinned, togglePin } = useSidebarStore()
+  const { isExpanded, toggleFolder, isPinned, togglePin, creatingItem, cancelCreating } = useSidebarStore()
   const expanded = isExpanded(node.path)
   const pinned = isPinned(node.path)
 
@@ -134,8 +137,20 @@ export function FileTreeItem({
               isSelected={isSelected && child.path === node.path}
               onSelect={onSelect}
               onToggleExpand={onToggleExpand}
+              onCreateConfirm={onCreateConfirm}
             />
           ))}
+          {/* このディレクトリ内に作成する場合 */}
+          {creatingItem && creatingItem.parentPath === node.path && (
+            <div style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}>
+              <CreateFileInput
+                type={creatingItem.type}
+                parentPath={creatingItem.parentPath}
+                onConfirm={(name) => onCreateConfirm?.(name, creatingItem.type)}
+                onCancel={cancelCreating}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

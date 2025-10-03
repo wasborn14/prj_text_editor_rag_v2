@@ -2,22 +2,47 @@
 
 import React from 'react'
 import { FilePlus, FolderPlus, X } from 'lucide-react'
+import { useSidebarStore } from '@/stores/sidebarStore'
 
 interface SidebarHeaderProps {
   repositoryName?: string
   onSearch?: (query: string) => void
-  onCreateFile?: () => void
-  onCreateFolder?: () => void
+  selectedFilePath?: string
+  selectedFileType?: 'file' | 'dir'
   className?: string
 }
 
 export function SidebarHeader({
   onSearch,
-  onCreateFile,
-  onCreateFolder,
+  selectedFilePath,
+  selectedFileType,
   className = ''
 }: SidebarHeaderProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
+  const { setCreatingItem } = useSidebarStore()
+
+  const getParentPath = (filePath: string | undefined, fileType: 'file' | 'dir' | undefined): string => {
+    if (!filePath) return ''
+
+    // ディレクトリの場合はその中に作成
+    if (fileType === 'dir') {
+      return filePath
+    }
+
+    // ファイルの場合は親ディレクトリに作成
+    const lastSlashIndex = filePath.lastIndexOf('/')
+    return lastSlashIndex > 0 ? filePath.substring(0, lastSlashIndex) : ''
+  }
+
+  const handleCreateFile = () => {
+    const parentPath = getParentPath(selectedFilePath, selectedFileType)
+    setCreatingItem({ type: 'file', parentPath })
+  }
+
+  const handleCreateFolder = () => {
+    const parentPath = getParentPath(selectedFilePath, selectedFileType)
+    setCreatingItem({ type: 'folder', parentPath })
+  }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value
@@ -32,7 +57,7 @@ export function SidebarHeader({
         <div className="flex items-center space-x-1">
           {/* 新規ファイル作成 */}
           <button
-            onClick={onCreateFile}
+            onClick={handleCreateFile}
             className="p-1.5 rounded hover:bg-gray-100 transition-colors"
             title="New File"
           >
@@ -41,7 +66,7 @@ export function SidebarHeader({
 
           {/* 新規フォルダ作成 */}
           <button
-            onClick={onCreateFolder}
+            onClick={handleCreateFolder}
             className="p-1.5 rounded hover:bg-gray-100 transition-colors"
             title="New Folder"
           >

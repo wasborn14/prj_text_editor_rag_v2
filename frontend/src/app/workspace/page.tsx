@@ -25,7 +25,8 @@ export default function WorkspacePage() {
   const {
     data: repositoryFiles,
     isLoading: filesLoading,
-    error: filesError
+    error: filesError,
+    refetch: refetchFiles
   } = useRepositoryFiles({
     repositoryId: selectedRepository?.id || '',
     enabled: !!selectedRepository
@@ -96,6 +97,8 @@ export default function WorkspacePage() {
             files={repositoryFiles.contents}
             selectedFilePath={selectedFile?.path}
             onFileSelect={handleFileSelect}
+            repository={selectedRepository}
+            onRefresh={() => refetchFiles()}
           />
         ) : null}
 

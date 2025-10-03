@@ -4,12 +4,14 @@ import React, { useMemo } from 'react'
 import { FileTreeItem, FileListItem, FileTreeNode } from './FileTreeItem'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { Icon } from '@/components/atoms/Icon/Icon'
+import { CreateFileInput } from '@/components/molecules/CreateFileInput/CreateFileInput'
 
 interface SidebarContentProps {
   files: FileTreeNode[]
   selectedFilePath?: string
   onFileSelect: (file: FileTreeNode) => void
   searchQuery?: string
+  onCreateConfirm?: (name: string, type: 'file' | 'folder') => void
   className?: string
 }
 
@@ -18,9 +20,10 @@ export function SidebarContent({
   selectedFilePath,
   onFileSelect,
   searchQuery = '',
+  onCreateConfirm,
   className = ''
 }: SidebarContentProps) {
-  const { viewMode, pinnedFiles } = useSidebarStore()
+  const { viewMode, pinnedFiles, creatingItem, cancelCreating } = useSidebarStore()
 
   // 検索結果をフィルタリング
   const filteredFiles = useMemo(() => {
@@ -90,7 +93,7 @@ export function SidebarContent({
   }
 
   const renderTreeView = () => {
-    if (filteredFiles.length === 0) {
+    if (filteredFiles.length === 0 && !creatingItem) {
       return renderEmptyState('No files found')
     }
 
@@ -103,8 +106,17 @@ export function SidebarContent({
             depth={0}
             isSelected={selectedFilePath === node.path}
             onSelect={onFileSelect}
+            onCreateConfirm={onCreateConfirm}
           />
         ))}
+        {creatingItem && creatingItem.parentPath === '' && (
+          <CreateFileInput
+            type={creatingItem.type}
+            parentPath={creatingItem.parentPath}
+            onConfirm={(name) => onCreateConfirm?.(name, creatingItem.type)}
+            onCancel={cancelCreating}
+          />
+        )}
       </div>
     )
   }
