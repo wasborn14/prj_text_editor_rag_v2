@@ -141,10 +141,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // デバッグ: URLを確認
     console.log('OAuth URL:', data?.url)
 
-    // リダイレクト（これは自動的に行われるはずだが、念のため明示的に実行）
+    // リダイレクト
     if (data?.url) {
-      // window.location.href = data.url
-      window.location.href = 'https://google.com'
+      console.log('Attempting redirect...')
+      window.location.href = data.url
+      console.log('Redirect command executed')
+    } else {
+      console.error('No URL found in response')
     }
   },
 
