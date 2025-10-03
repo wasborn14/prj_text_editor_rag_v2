@@ -339,7 +339,7 @@ const tableToMarkdown = (table: ProseMirrorTableNode): string => {
     return ''
   }
 
-  const rows = table.content.map((row, rowIndex) => {
+  const rows = table.content.map((row) => {
     const cells = row.content?.map(cell => extractText(cell)) || []
     return `| ${cells.join(' | ')} |`
   })
