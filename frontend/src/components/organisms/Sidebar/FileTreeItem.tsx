@@ -32,7 +32,7 @@ export function FileTreeItem({
   onCreateConfirm,
   className = ''
 }: FileTreeItemProps) {
-  const { isExpanded, toggleFolder, isPinned, togglePin, creatingItem, cancelCreating } = useSidebarStore()
+  const { isExpanded, toggleFolder, isPinned, togglePin, creatingItem, cancelCreating, setContextMenu } = useSidebarStore()
   const expanded = isExpanded(node.path)
   const pinned = isPinned(node.path)
 
@@ -48,6 +48,18 @@ export function FileTreeItem({
   const handlePinToggle = (e: React.MouseEvent) => {
     e.stopPropagation()
     togglePin(node.path)
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      targetPath: node.path,
+      targetType: node.type
+    })
   }
 
   const indentStyle = {
@@ -69,6 +81,7 @@ export function FileTreeItem({
         style={indentStyle}
         onClick={handleClick}
         onDoubleClick={() => node.type === 'file' && onSelect(node)}
+        onContextMenu={handleContextMenu}
       >
         {/* 展開アイコン */}
         {node.type === 'dir' && (

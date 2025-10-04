@@ -7,8 +7,12 @@ import { ResizeHandle } from './ResizeHandle'
 import { useSidebarStore, useSidebarKeyboard } from '@/stores/sidebarStore'
 import { FileTreeNode } from './FileTreeItem'
 import { useCreateFile } from '@/hooks/useCreateFile'
+import { useDeleteFile } from '@/hooks/useDeleteFile'
 import { useEditorStore } from '@/stores/editorStore'
 import { UserRepository } from '@/types'
+import { ContextMenu, ContextMenuItem } from '@/components/molecules/ContextMenu/ContextMenu'
+import { ConfirmDialog } from '@/components/molecules/ConfirmDialog/ConfirmDialog'
+import { Trash2 } from 'lucide-react'
 
 interface SidebarProps {
   files: FileTreeNode[]
@@ -27,11 +31,17 @@ export function Sidebar({
   onRefresh,
   className = ''
 }: SidebarProps) {
-  const { isVisible, width } = useSidebarStore()
+  const { isVisible, width, contextMenu, closeContextMenu } = useSidebarStore()
   const { handleKeyboard } = useSidebarKeyboard()
   const { createFile } = useCreateFile()
-  const { openFile } = useEditorStore()
+  const { deleteFile } = useDeleteFile()
+  const { openFile, closeTab, openTabs } = useEditorStore()
   const [searchQuery, setSearchQuery] = useState('')
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    path: string
+    type: 'file' | 'dir'
+  }>({ isOpen: false, path: '', type: 'file' })
 
   // キーボードショートカットの設定
   useEffect(() => {
@@ -103,6 +113,66 @@ export function Sidebar({
     }
   }
 
+  const handleDeleteClick = (path: string, type: 'file' | 'dir') => {
+    setConfirmDialog({ isOpen: true, path, type })
+    closeContextMenu()
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!repository) return
+
+    const { path, type } = confirmDialog
+
+    try {
+      const result = await deleteFile({
+        owner: repository.owner,
+        repo: repository.name,
+        path,
+        type
+      })
+
+      if (result?.success) {
+        console.log(`Successfully deleted ${type}: ${path}`)
+
+        // 削除されたファイルがエディタで開いている場合、タブを閉じる
+        if (type === 'file') {
+          const openTab = openTabs.find(tab => tab.path === path)
+          if (openTab) {
+            closeTab(openTab.id)
+          }
+        } else {
+          // フォルダの場合、配下の全ファイルのタブを閉じる
+          openTabs.forEach(tab => {
+            if (tab.path.startsWith(path + '/')) {
+              closeTab(tab.id)
+            }
+          })
+        }
+
+        // ファイル一覧を更新
+        if (onRefresh) {
+          onRefresh()
+        }
+
+        setConfirmDialog({ isOpen: false, path: '', type: 'file' })
+      }
+    } catch (error) {
+      console.error(`Failed to delete ${type}:`, error)
+      // TODO: エラーをユーザーに表示（トースト通知など）
+    }
+  }
+
+  const contextMenuItems: ContextMenuItem[] = contextMenu
+    ? [
+        {
+          label: 'Delete',
+          icon: <Trash2 className="w-4 h-4" />,
+          onClick: () => handleDeleteClick(contextMenu.targetPath, contextMenu.targetType),
+          danger: true
+        }
+      ]
+    : []
+
   if (!isVisible) {
     return null
   }
@@ -143,6 +213,32 @@ export function Sidebar({
 
       {/* リサイズハンドル */}
       <ResizeHandle />
+
+      {/* コンテキストメニュー */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenuItems}
+          onClose={closeContextMenu}
+        />
+      )}
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={`Delete ${confirmDialog.type === 'dir' ? 'Folder' : 'File'}`}
+        message={`Are you sure you want to delete "${confirmDialog.path}"?${
+          confirmDialog.type === 'dir'
+            ? ' This will delete all files within this folder.'
+            : ''
+        }`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger={true}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDialog({ isOpen: false, path: '', type: 'file' })}
+      />
     </div>
   )
 }

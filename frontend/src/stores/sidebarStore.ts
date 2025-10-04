@@ -22,6 +22,14 @@ interface SidebarState {
     parentPath: string
   } | null
 
+  // コンテキストメニュー
+  contextMenu: {
+    x: number
+    y: number
+    targetPath: string
+    targetType: 'file' | 'dir'
+  } | null
+
   // アクション
   toggleVisibility: () => void
   setVisibility: (visible: boolean) => void
@@ -43,6 +51,10 @@ interface SidebarState {
   setCreatingItem: (item: { type: 'file' | 'folder', parentPath: string } | null) => void
   cancelCreating: () => void
 
+  // コンテキストメニュー管理
+  setContextMenu: (menu: { x: number, y: number, targetPath: string, targetType: 'file' | 'dir' } | null) => void
+  closeContextMenu: () => void
+
   // リセット
   reset: () => void
 }
@@ -62,6 +74,7 @@ export const useSidebarStore = create<SidebarState>()(
       pinnedFiles: [],
       expandedFolders: new Set([]), // ルートフォルダは初期展開
       creatingItem: null,
+      contextMenu: null,
 
       // 表示制御
       toggleVisibility: () =>
@@ -126,6 +139,13 @@ export const useSidebarStore = create<SidebarState>()(
       cancelCreating: () =>
         set({ creatingItem: null }),
 
+      // コンテキストメニュー管理
+      setContextMenu: (menu) =>
+        set({ contextMenu: menu }),
+
+      closeContextMenu: () =>
+        set({ contextMenu: null }),
+
       // リセット
       reset: () =>
         set({
@@ -135,7 +155,8 @@ export const useSidebarStore = create<SidebarState>()(
           autoHide: false,
           pinnedFiles: [],
           expandedFolders: new Set([]),
-          creatingItem: null
+          creatingItem: null,
+          contextMenu: null
         })
     }),
     {
