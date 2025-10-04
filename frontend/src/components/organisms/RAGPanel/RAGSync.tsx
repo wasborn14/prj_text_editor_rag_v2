@@ -1,17 +1,47 @@
 'use client'
 
 import React, { useState } from 'react'
-import { RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { RefreshCw, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react'
 import { useRAGSync } from '@/hooks/useRAGSync'
+import { createClient } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/authStore'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { formatRelativeTime } from '@/utils/time'
 
 interface RAGSyncProps {
   repository?: string
+}
+
+interface SyncStatus {
+  last_synced_at: string
+  last_sync_status: string
+  files_count: number
 }
 
 export const RAGSync = ({ repository = 'wasborn14/test-editor-docs' }: RAGSyncProps) => {
   const [syncResult, setSyncResult] = useState<string>('')
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const { syncRepository, isSyncing, error } = useRAGSync()
+  const user = useAuthStore((state) => state.user)
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  // 最終同期情報を取得（React Query）
+  const { data: lastSyncInfo } = useQuery({
+    queryKey: ['repository-sync-status', repository],
+    queryFn: async () => {
+      if (!repository) return null
+
+      const { data } = await supabase
+        .from('repository_sync_status')
+        .select('last_synced_at, last_sync_status, files_count')
+        .eq('repository', repository)
+        .single()
+
+      return data as SyncStatus | null
+    },
+    enabled: !!repository
+  })
 
   const handleSync = async () => {
     setSyncResult('')
@@ -19,12 +49,42 @@ export const RAGSync = ({ repository = 'wasborn14/test-editor-docs' }: RAGSyncPr
 
     const result = await syncRepository(repository)
 
-    if (result) {
+    if (result && result.status === 'success') {
       setSyncResult(`${result.status}: ${result.message} (${result.files_synced} files synced)`)
       setSyncStatus('success')
-    } else if (error) {
-      setSyncResult(error)
+
+      // Supabaseに履歴保存
+      if (user) {
+        await supabase.from('repository_sync_status').upsert({
+          repository,
+          last_synced_at: new Date().toISOString(),
+          last_sync_status: 'success',
+          files_count: result.files_synced,
+          updated_by: user.id
+        })
+
+        // React Queryキャッシュを無効化して再取得
+        queryClient.invalidateQueries({ queryKey: ['repository-sync-status', repository] })
+      }
+    } else if (error || result?.status === 'error') {
+      const errorMsg = error || result?.message || 'Sync failed'
+      setSyncResult(errorMsg)
       setSyncStatus('error')
+
+      // エラーもSupabaseに保存
+      if (user) {
+        await supabase.from('repository_sync_status').upsert({
+          repository,
+          last_synced_at: new Date().toISOString(),
+          last_sync_status: 'error',
+          files_count: 0,
+          error_message: errorMsg,
+          updated_by: user.id
+        })
+
+        // React Queryキャッシュを無効化して再取得
+        queryClient.invalidateQueries({ queryKey: ['repository-sync-status', repository] })
+      }
     }
   }
 
@@ -35,6 +95,19 @@ export const RAGSync = ({ repository = 'wasborn14/test-editor-docs' }: RAGSyncPr
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <div className="text-sm text-gray-600 mb-1">Current Repository</div>
           <div className="font-mono font-semibold text-gray-900">{repository}</div>
+
+          {/* Last Sync Info */}
+          {lastSyncInfo && (
+            <div className="mt-3 pt-3 border-t border-gray-300 flex items-center space-x-2 text-xs">
+              <Clock className="w-3.5 h-3.5 text-gray-500" />
+              <span className="text-gray-600">
+                Last synced: <span className="font-medium">{formatRelativeTime(lastSyncInfo.last_synced_at)}</span>
+                {lastSyncInfo.last_sync_status === 'success' && (
+                  <span className="text-green-600 ml-1">({lastSyncInfo.files_count} files)</span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Sync Button */}
