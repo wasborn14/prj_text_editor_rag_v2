@@ -34,7 +34,7 @@ export function Sidebar({
   const { isVisible, width, contextMenu, closeContextMenu } = useSidebarStore()
   const { handleKeyboard } = useSidebarKeyboard()
   const { createFile } = useCreateFile()
-  const { deleteFile } = useDeleteFile()
+  const { deleteFile, isDeleting } = useDeleteFile()
   const { openFile, closeTab, openTabs } = useEditorStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -236,6 +236,7 @@ export function Sidebar({
         confirmText="Delete"
         cancelText="Cancel"
         danger={true}
+        isLoading={isDeleting}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDialog({ isOpen: false, path: '', type: 'file' })}
       />
