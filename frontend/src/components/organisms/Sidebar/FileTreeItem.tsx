@@ -40,6 +40,7 @@ export function FileTreeItem({
     if (node.type === 'dir') {
       toggleFolder(node.path)
       onToggleExpand?.(node.path)
+      onSelect(node)  // ディレクトリも選択状態にする
     } else {
       onSelect(node)
     }

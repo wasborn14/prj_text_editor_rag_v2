@@ -19,7 +19,7 @@ export function SidebarHeader({
   className = ''
 }: SidebarHeaderProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
-  const { setCreatingItem } = useSidebarStore()
+  const { setCreatingItem, expandFolder } = useSidebarStore()
 
   const getParentPath = (filePath: string | undefined, fileType: 'file' | 'dir' | undefined): string => {
     if (!filePath) return ''
@@ -36,11 +36,23 @@ export function SidebarHeader({
 
   const handleCreateFile = () => {
     const parentPath = getParentPath(selectedFilePath, selectedFileType)
+
+    // 選択中のディレクトリが閉じている場合は開く
+    if (selectedFileType === 'dir' && selectedFilePath) {
+      expandFolder(selectedFilePath)
+    }
+
     setCreatingItem({ type: 'file', parentPath })
   }
 
   const handleCreateFolder = () => {
     const parentPath = getParentPath(selectedFilePath, selectedFileType)
+
+    // 選択中のディレクトリが閉じている場合は開く
+    if (selectedFileType === 'dir' && selectedFilePath) {
+      expandFolder(selectedFilePath)
+    }
+
     setCreatingItem({ type: 'folder', parentPath })
   }
 
