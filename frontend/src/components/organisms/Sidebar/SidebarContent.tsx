@@ -25,9 +25,27 @@ export function SidebarContent({
 }: SidebarContentProps) {
   const { viewMode, pinnedFiles, creatingItem, cancelCreating } = useSidebarStore()
 
+  // .gitkeepファイルを除外する関数
+  const removeGitkeep = (nodes: FileTreeNode[]): FileTreeNode[] => {
+    return nodes
+      .filter(node => node.name !== '.gitkeep')
+      .map(node => {
+        if (node.type === 'dir' && node.children) {
+          return {
+            ...node,
+            children: removeGitkeep(node.children)
+          }
+        }
+        return node
+      })
+  }
+
   // 検索結果をフィルタリング
   const filteredFiles = useMemo(() => {
-    if (!searchQuery.trim()) return files
+    // まず.gitkeepを除外
+    const filesWithoutGitkeep = removeGitkeep(files)
+
+    if (!searchQuery.trim()) return filesWithoutGitkeep
 
     const query = searchQuery.toLowerCase()
 
@@ -56,7 +74,7 @@ export function SidebarContent({
       }, [])
     }
 
-    return filterRecursive(files)
+    return filterRecursive(filesWithoutGitkeep)
   }, [files, searchQuery])
 
   // ブックマーク表示用のファイルリスト
