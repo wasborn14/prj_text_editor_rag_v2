@@ -177,6 +177,22 @@ export function Sidebar({
     return null
   }
 
+  // 選択中のファイル/ディレクトリのタイプを再帰的に検索
+  const findNodeType = (nodes: FileTreeNode[], path: string | undefined): 'file' | 'dir' | undefined => {
+    if (!path) return undefined
+
+    for (const node of nodes) {
+      if (node.path === path) {
+        return node.type
+      }
+      if (node.children) {
+        const childType = findNodeType(node.children, path)
+        if (childType) return childType
+      }
+    }
+    return undefined
+  }
+
   const sidebarStyle = {
     width: `${width}px`,
     minWidth: '200px',
@@ -198,7 +214,7 @@ export function Sidebar({
         <SidebarHeader
           onSearch={handleSearch}
           selectedFilePath={selectedFilePath}
-          selectedFileType={files.find(f => f.path === selectedFilePath)?.type}
+          selectedFileType={findNodeType(files, selectedFilePath)}
         />
 
         {/* コンテンツエリア */}
