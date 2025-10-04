@@ -12,6 +12,7 @@ import { FileTreeNode } from '@/components/organisms/Sidebar/FileTreeItem'
 import { Editor } from '@/components/organisms/Editor/Editor'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
+import { RAGPanel } from '@/components/organisms/RAGPanel/RAGPanel'
 
 export default function WorkspacePage() {
   const { user, profile, loading: authLoading } = useRequireAuth()
@@ -108,6 +109,9 @@ export default function WorkspacePage() {
         <div className="flex-1 bg-white flex flex-col">
           <Editor />
         </div>
+
+        {/* RAG検索パネル */}
+        <RAGPanel repository={selectedRepository ? `${selectedRepository.owner}/${selectedRepository.name}` : undefined} />
       </div>
     </div>
   )

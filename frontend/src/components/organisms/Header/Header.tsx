@@ -5,7 +5,9 @@ import { Button } from '@/components/atoms/Button/Button'
 import { Avatar } from '@/components/atoms/Avatar/Avatar'
 import { SidebarToggle } from '@/components/atoms/ToggleButton/ToggleButton'
 import { useSidebarStore } from '@/stores/sidebarStore'
+import { useRAGPanelStore } from '@/stores/ragPanelStore'
 import { UserRepository } from '@/types'
+import { Search } from 'lucide-react'
 
 interface HeaderProps {
   profile?: {
@@ -19,6 +21,7 @@ interface HeaderProps {
 export const Header = ({ profile, selectedRepository }: HeaderProps) => {
   const signOut = useAuthStore((state) => state.signOut)
   const { isVisible, toggleVisibility } = useSidebarStore()
+  const { isVisible: isRAGVisible, togglePanel } = useRAGPanelStore()
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -47,8 +50,24 @@ export const Header = ({ profile, selectedRepository }: HeaderProps) => {
           )}
         </div>
 
-        {/* Right Side - ユーザー情報 */}
+        {/* Right Side - RAGパネル、ユーザー情報 */}
         <div className="flex items-center space-x-4">
+          {/* RAG検索トグルボタン */}
+          <button
+            onClick={togglePanel}
+            className={`
+              flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-colors
+              ${isRAGVisible
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }
+            `}
+            title="RAG Search"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden sm:inline text-sm font-medium">RAG Search</span>
+          </button>
+
           {profile && (
               <div className="flex items-center space-x-3">
                 <Avatar

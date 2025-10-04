@@ -1,0 +1,134 @@
+'use client'
+
+import React, { useState } from 'react'
+import { X, Search, MessageCircle, RefreshCw, Maximize2, Minimize2 } from 'lucide-react'
+import { useRAGPanelStore } from '@/stores/ragPanelStore'
+import { RAGSearch } from './RAGSearch'
+import { RAGChat } from './RAGChat'
+import { RAGSync } from './RAGSync'
+
+interface RAGPanelProps {
+  repository?: string
+}
+
+export const RAGPanel = ({ repository }: RAGPanelProps) => {
+  const { isVisible, width, activeTab, setVisible, setActiveTab, setWidth } = useRAGPanelStore()
+  const [isResizing, setIsResizing] = useState(false)
+  const [isMaximized, setIsMaximized] = useState(false)
+
+  const handleMaximize = () => {
+    if (isMaximized) {
+      setWidth(400) // デフォルトサイズに戻す
+      setIsMaximized(false)
+    } else {
+      setWidth(800) // 最大サイズ
+      setIsMaximized(true)
+    }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizing) {
+        const newWidth = window.innerWidth - e.clientX
+        setWidth(newWidth)
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing, setWidth])
+
+  if (!isVisible) return null
+
+  const tabs = [
+    { id: 'search', label: 'Search', icon: Search },
+    { id: 'chat', label: 'Chat', icon: MessageCircle },
+    { id: 'sync', label: 'Sync', icon: RefreshCw }
+  ] as const
+
+  return (
+    <div
+      className="fixed right-0 top-16 bottom-0 bg-white border-l border-gray-200 shadow-xl transition-all duration-300 ease-in-out z-30 flex"
+      style={{ width: `${width}px` }}
+    >
+      {/* Resize Handle */}
+      <div
+        className="w-1 hover:w-2 cursor-col-resize bg-gray-200 hover:bg-blue-400 transition-all"
+        onMouseDown={handleMouseDown}
+      />
+
+      {/* Panel Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header with Tabs */}
+        <div className="border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex space-x-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center space-x-2
+                      ${activeTab === tab.id
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-100'
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={handleMaximize}
+                className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+                title={isMaximized ? 'Restore' : 'Maximize'}
+              >
+                {isMaximized ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => setVisible(false)}
+                className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="flex-1 overflow-hidden">
+          {activeTab === 'search' && <RAGSearch repository={repository} />}
+          {activeTab === 'chat' && <RAGChat repository={repository} />}
+          {activeTab === 'sync' && <RAGSync repository={repository} />}
+        </div>
+      </div>
+    </div>
+  )
+}
