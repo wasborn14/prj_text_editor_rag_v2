@@ -50,7 +50,16 @@ export function CreateFileInput({
   }
 
   const handleConfirm = () => {
-    const trimmedValue = value.trim()
+    let trimmedValue = value.trim()
+
+    // ファイルの場合、拡張子がなければ.mdを自動追加
+    if (type === 'file') {
+      const hasExtension = /\.[^.]+$/.test(trimmedValue)
+      if (!hasExtension) {
+        trimmedValue = `${trimmedValue}.md`
+      }
+    }
+
     const validationError = validate(trimmedValue)
 
     if (validationError) {

@@ -100,7 +100,7 @@ export function Sidebar({
         if (type === 'file') {
           openFile({
             path: fullPath,
-            name,
+            name: name,  // CreateFileInputから渡される名前（.md付き）
             type: 'file'
           })
         }

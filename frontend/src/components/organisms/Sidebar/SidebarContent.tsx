@@ -105,6 +105,7 @@ export function SidebarContent({
             node={node}
             depth={0}
             isSelected={selectedFilePath === node.path}
+            selectedFilePath={selectedFilePath}
             onSelect={onFileSelect}
             onCreateConfirm={onCreateConfirm}
           />

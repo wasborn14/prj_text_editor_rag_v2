@@ -17,6 +17,7 @@ interface FileTreeItemProps {
   node: FileTreeNode
   depth: number
   isSelected: boolean
+  selectedFilePath?: string
   onSelect: (node: FileTreeNode) => void
   onToggleExpand?: (path: string) => void
   onCreateConfirm?: (name: string, type: 'file' | 'folder') => void
@@ -27,6 +28,7 @@ export function FileTreeItem({
   node,
   depth,
   isSelected,
+  selectedFilePath,
   onSelect,
   onToggleExpand,
   onCreateConfirm,
@@ -141,7 +143,8 @@ export function FileTreeItem({
               key={child.path}
               node={child}
               depth={depth + 1}
-              isSelected={isSelected && child.path === node.path}
+              isSelected={selectedFilePath === child.path}
+              selectedFilePath={selectedFilePath}
               onSelect={onSelect}
               onToggleExpand={onToggleExpand}
               onCreateConfirm={onCreateConfirm}
