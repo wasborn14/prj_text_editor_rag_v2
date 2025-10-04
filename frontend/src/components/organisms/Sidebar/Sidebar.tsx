@@ -12,7 +12,7 @@ import { useEditorStore } from '@/stores/editorStore'
 import { UserRepository } from '@/types'
 import { ContextMenu, ContextMenuItem } from '@/components/molecules/ContextMenu/ContextMenu'
 import { ConfirmDialog } from '@/components/molecules/ConfirmDialog/ConfirmDialog'
-import { Trash2 } from 'lucide-react'
+import { Trash2, FilePlus, FolderPlus } from 'lucide-react'
 
 interface SidebarProps {
   files: FileTreeNode[]
@@ -31,7 +31,7 @@ export function Sidebar({
   onRefresh,
   className = ''
 }: SidebarProps) {
-  const { isVisible, width, contextMenu, closeContextMenu } = useSidebarStore()
+  const { isVisible, width, contextMenu, closeContextMenu, setCreatingItem } = useSidebarStore()
   const { handleKeyboard } = useSidebarKeyboard()
   const { createFile } = useCreateFile()
   const { deleteFile, isDeleting } = useDeleteFile()
@@ -113,6 +113,16 @@ export function Sidebar({
     }
   }
 
+  const handleNewFileClick = (parentPath: string) => {
+    setCreatingItem({ type: 'file', parentPath })
+    closeContextMenu()
+  }
+
+  const handleNewFolderClick = (parentPath: string) => {
+    setCreatingItem({ type: 'folder', parentPath })
+    closeContextMenu()
+  }
+
   const handleDeleteClick = (path: string, type: 'file' | 'dir') => {
     setConfirmDialog({ isOpen: true, path, type })
     closeContextMenu()
@@ -164,6 +174,16 @@ export function Sidebar({
 
   const contextMenuItems: ContextMenuItem[] = contextMenu
     ? [
+        {
+          label: 'New File',
+          icon: <FilePlus className="w-4 h-4" />,
+          onClick: () => handleNewFileClick(contextMenu.targetType === 'dir' ? contextMenu.targetPath : contextMenu.targetPath.substring(0, contextMenu.targetPath.lastIndexOf('/'))),
+        },
+        {
+          label: 'New Folder',
+          icon: <FolderPlus className="w-4 h-4" />,
+          onClick: () => handleNewFolderClick(contextMenu.targetType === 'dir' ? contextMenu.targetPath : contextMenu.targetPath.substring(0, contextMenu.targetPath.lastIndexOf('/'))),
+        },
         {
           label: 'Delete',
           icon: <Trash2 className="w-4 h-4" />,
