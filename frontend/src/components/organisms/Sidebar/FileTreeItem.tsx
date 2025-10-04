@@ -117,13 +117,6 @@ export function FileTreeItem({
           {node.name}
         </span>
 
-        {/* ファイルサイズ（ファイルの場合のみ） */}
-        {node.type === 'file' && node.size && (
-          <span className="text-xs text-gray-400 ml-2">
-            {formatFileSize(node.size)}
-          </span>
-        )}
-
         {/* ピンアイコン */}
         {(pinned || isSelected) && (
           <button
