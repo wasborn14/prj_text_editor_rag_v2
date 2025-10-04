@@ -44,7 +44,10 @@ export async function POST(request: NextRequest) {
 
     // フォルダ作成の場合は.gitkeepファイルを作成
     const filePath = type === 'folder' ? `${path}/.gitkeep` : path
-    const fileContent = type === 'folder' ? '' : content
+    // ファイル作成時、contentが空の場合はパスをデフォルトコンテンツとして使用（ユニークなSHA生成のため）
+    // 拡張子を除いたパスを使用
+    const pathWithoutExt = path.replace(/\.[^/.]+$/, '')
+    const fileContent = type === 'folder' ? '' : (content || `# ${pathWithoutExt}\n\n`)
 
     // Base64エンコード
     const encodedContent = Buffer.from(fileContent).toString('base64')
