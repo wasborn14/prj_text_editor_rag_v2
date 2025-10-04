@@ -85,7 +85,7 @@ export function Sidebar({
         owner: repository.owner,
         repo: repository.name,
         path: fullPath,
-        content: type === 'file' ? '# New File\n\nStart editing...' : '',
+        content: type === 'file' ? undefined : '', // undefinedでAPI側のデフォルト（パスベース）を使用
         type
       })
 
