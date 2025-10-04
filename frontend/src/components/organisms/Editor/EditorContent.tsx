@@ -111,6 +111,7 @@ export const EditorContent = ({ className = '' }: EditorContentProps) => {
     <>
       <div className={`w-full h-full overflow-auto ${className}`}>
         <NovelWithMenu
+          key={activeTab.id}
           content={isSample ? parseToProseMirror(sampleContent) : parseToProseMirror(activeTab?.content || '')}
           onChange={handleNovelChange}
         />
