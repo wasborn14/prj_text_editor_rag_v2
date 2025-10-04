@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${VPS_RAG_KEY}`
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30000) // 同期は30秒
+      signal: AbortSignal.timeout(300000) // 同期は5分
     })
 
     if (!response.ok) {
@@ -54,4 +54,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const maxDuration = 40
+export const maxDuration = 300

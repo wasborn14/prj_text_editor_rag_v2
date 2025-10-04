@@ -37,7 +37,6 @@ export const useRAGSync = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
-      console.error('Sync error:', errorMessage)
       return null
     } finally {
       setIsSyncing(false)
