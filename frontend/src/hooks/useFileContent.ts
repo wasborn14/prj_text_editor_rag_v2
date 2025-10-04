@@ -44,7 +44,8 @@ export const useFileContent = ({
   onSuccess,
   onError
 }: FileContentParams) => {
-  const { updateContent, openTabs, activeTabId } = useEditorStore()
+  const updateContent = useEditorStore(state => state.updateContent)
+
   const query = useQuery({
     queryKey: ['file-content', repositoryId, filePath],
     queryFn: () => fetchFileContent(repositoryId, filePath),
@@ -54,28 +55,37 @@ export const useFileContent = ({
     retryDelay: 1000,
   })
 
+  // データ取得成功時の処理
   useEffect(() => {
     if (query.isSuccess && query.data) {
-      // アクティブタブの内容が空の場合のみ更新
-      const activeTab = openTabs.find(tab => tab.id === activeTabId)
-      if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
-        updateContent(activeTab.id, query.data.content, query.data.sha)
+      const store = useEditorStore.getState()
+      const activeTab = store.openTabs.find(tab => tab.path === filePath && tab.id === store.activeTabId)
+
+      if (activeTab && activeTab.content === '') {
+        // 初期ロード時はmarkDirty: falseで更新（未編集状態）
+        updateContent(activeTab.id, query.data.content, query.data.sha, false)
       }
       onSuccess?.(query.data)
     }
-  }, [query.isSuccess, query.data, onSuccess, openTabs, activeTabId, updateContent, filePath])
+    // updateContent, onSuccess, filePathは安定しているため依存配列から除外
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.isSuccess, query.data?.sha])
 
+  // エラー時の処理
   useEffect(() => {
     if (query.isError && query.error) {
-      // アクティブタブにエラーメッセージを表示
-      const activeTab = openTabs.find(tab => tab.id === activeTabId)
-      if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
+      const store = useEditorStore.getState()
+      const activeTab = store.openTabs.find(tab => tab.path === filePath && tab.id === store.activeTabId)
+
+      if (activeTab && activeTab.content === '') {
         const errorMessage = `// Failed to load file: ${query.error.message || 'Unknown error'}`
-        updateContent(activeTab.id, errorMessage)
+        updateContent(activeTab.id, errorMessage, undefined, false)
       }
       onError?.(query.error)
     }
-  }, [query.isError, query.error, onError, openTabs, activeTabId, updateContent, filePath])
+    // updateContent, onError, filePathは安定しているため依存配列から除外
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.isError, query.error?.message])
 
   return query
 }

@@ -27,7 +27,7 @@ interface EditorState {
   closeAllTabs: () => void
 
   // ファイル操作
-  updateContent: (tabId: string, content: string, sha?: string) => void
+  updateContent: (tabId: string, content: string, sha?: string, markDirty?: boolean) => void
   updateSha: (tabId: string, sha: string) => void
   setLoading: (tabId: string, loading: boolean) => void
   setSaving: (tabId: string, saving: boolean) => void
@@ -152,14 +152,14 @@ export const useEditorStore = create<EditorState>()(
         })
       },
 
-      updateContent: (tabId, content, sha) => {
+      updateContent: (tabId, content, sha, markDirty = true) => {
         const { openTabs } = get()
         const updatedTabs = openTabs.map(tab => {
           if (tab.id === tabId) {
             return {
               ...tab,
               content,
-              isDirty: true,
+              isDirty: markDirty,
               isLoading: false,
               ...(sha && { sha })
             }
