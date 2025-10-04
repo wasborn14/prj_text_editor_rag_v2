@@ -25,13 +25,14 @@ interface EditorState {
   closeTab: (tabId: string) => void
   setActiveTab: (tabId: string | null) => void
   closeAllTabs: () => void
+  updateTabPath: (oldPath: string, newPath: string, newName: string) => void
 
   // ファイル操作
   updateContent: (tabId: string, content: string, sha?: string, markDirty?: boolean) => void
   updateSha: (tabId: string, sha: string) => void
   setLoading: (tabId: string, loading: boolean) => void
   setSaving: (tabId: string, saving: boolean) => void
-  markSaved: (tabId: string) => void
+  markSaved: (tabId: string, content?: string, sha?: string) => void
 
   // ヘルパー
   getActiveTab: () => EditorTab | null
@@ -149,6 +150,30 @@ export const useEditorStore = create<EditorState>()(
         set({
           openTabs: [],
           activeTabId: null
+        })
+      },
+
+      updateTabPath: (oldPath, newPath, newName) => {
+        const { openTabs } = get()
+        const oldTabId = generateTabId(oldPath)
+        const newTabId = generateTabId(newPath)
+
+        const updatedTabs = openTabs.map(tab => {
+          if (tab.id === oldTabId) {
+            return {
+              ...tab,
+              id: newTabId,
+              path: newPath,
+              name: newName,
+              language: getLanguageFromPath(newPath)
+            }
+          }
+          return tab
+        })
+
+        set({
+          openTabs: updatedTabs,
+          activeTabId: get().activeTabId === oldTabId ? newTabId : get().activeTabId
         })
       },
 

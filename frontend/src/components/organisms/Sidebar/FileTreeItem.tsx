@@ -4,6 +4,7 @@ import React from 'react'
 import { Icon, getFileIconType } from '@/components/atoms/Icon/Icon'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { CreateFileInput } from '@/components/molecules/CreateFileInput/CreateFileInput'
+import { RenameInput } from '@/components/molecules/RenameInput/RenameInput'
 
 export interface FileTreeNode {
   name: string
@@ -21,6 +22,7 @@ interface FileTreeItemProps {
   onSelect: (node: FileTreeNode) => void
   onToggleExpand?: (path: string) => void
   onCreateConfirm?: (name: string, type: 'file' | 'folder') => void
+  onRenameConfirm?: (newName: string) => void
   getExistingNames?: (parentPath: string) => string[]
   className?: string
 }
@@ -33,10 +35,11 @@ export function FileTreeItem({
   onSelect,
   onToggleExpand,
   onCreateConfirm,
+  onRenameConfirm,
   getExistingNames,
   className = ''
 }: FileTreeItemProps) {
-  const { isExpanded, toggleFolder, isPinned, togglePin, creatingItem, cancelCreating, setContextMenu } = useSidebarStore()
+  const { isExpanded, toggleFolder, isPinned, togglePin, creatingItem, cancelCreating, renamingItem, cancelRenaming, setContextMenu } = useSidebarStore()
   const expanded = isExpanded(node.path)
   const pinned = isPinned(node.path)
 
@@ -141,17 +144,29 @@ export function FileTreeItem({
       {node.type === 'dir' && expanded && node.children && (
         <div>
           {node.children.map((child) => (
-            <FileTreeItem
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              isSelected={selectedFilePath === child.path}
-              selectedFilePath={selectedFilePath}
-              onSelect={onSelect}
-              onToggleExpand={onToggleExpand}
-              onCreateConfirm={onCreateConfirm}
-              getExistingNames={getExistingNames}
-            />
+            renamingItem && renamingItem.path === child.path ? (
+              <div key={child.path} style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}>
+                <RenameInput
+                  currentName={child.name}
+                  type={renamingItem.type}
+                  onConfirm={(newName) => onRenameConfirm?.(newName)}
+                  onCancel={cancelRenaming}
+                />
+              </div>
+            ) : (
+              <FileTreeItem
+                key={child.path}
+                node={child}
+                depth={depth + 1}
+                isSelected={selectedFilePath === child.path}
+                selectedFilePath={selectedFilePath}
+                onSelect={onSelect}
+                onToggleExpand={onToggleExpand}
+                onCreateConfirm={onCreateConfirm}
+                onRenameConfirm={onRenameConfirm}
+                getExistingNames={getExistingNames}
+              />
+            )
           ))}
           {/* このディレクトリ内に作成する場合 */}
           {creatingItem && creatingItem.parentPath === node.path && (

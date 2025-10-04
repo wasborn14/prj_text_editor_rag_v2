@@ -22,6 +22,12 @@ interface SidebarState {
     parentPath: string
   } | null
 
+  // ファイル/フォルダ名前変更
+  renamingItem: {
+    path: string
+    type: 'file' | 'dir'
+  } | null
+
   // コンテキストメニュー
   contextMenu: {
     x: number
@@ -51,6 +57,10 @@ interface SidebarState {
   setCreatingItem: (item: { type: 'file' | 'folder', parentPath: string } | null) => void
   cancelCreating: () => void
 
+  // ファイル/フォルダ名前変更管理
+  setRenamingItem: (item: { path: string, type: 'file' | 'dir' } | null) => void
+  cancelRenaming: () => void
+
   // コンテキストメニュー管理
   setContextMenu: (menu: { x: number, y: number, targetPath: string, targetType: 'file' | 'dir' } | null) => void
   closeContextMenu: () => void
@@ -74,6 +84,7 @@ export const useSidebarStore = create<SidebarState>()(
       pinnedFiles: [],
       expandedFolders: new Set([]), // ルートフォルダは初期展開
       creatingItem: null,
+      renamingItem: null,
       contextMenu: null,
 
       // 表示制御
@@ -139,6 +150,13 @@ export const useSidebarStore = create<SidebarState>()(
       cancelCreating: () =>
         set({ creatingItem: null }),
 
+      // ファイル/フォルダ名前変更管理
+      setRenamingItem: (item) =>
+        set({ renamingItem: item }),
+
+      cancelRenaming: () =>
+        set({ renamingItem: null }),
+
       // コンテキストメニュー管理
       setContextMenu: (menu) =>
         set({ contextMenu: menu }),
@@ -156,6 +174,7 @@ export const useSidebarStore = create<SidebarState>()(
           pinnedFiles: [],
           expandedFolders: new Set([]),
           creatingItem: null,
+          renamingItem: null,
           contextMenu: null
         })
     }),

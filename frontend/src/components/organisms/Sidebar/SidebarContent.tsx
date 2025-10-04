@@ -5,6 +5,7 @@ import { FileTreeItem, FileListItem, FileTreeNode } from './FileTreeItem'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { Icon } from '@/components/atoms/Icon/Icon'
 import { CreateFileInput } from '@/components/molecules/CreateFileInput/CreateFileInput'
+import { RenameInput } from '@/components/molecules/RenameInput/RenameInput'
 
 interface SidebarContentProps {
   files: FileTreeNode[]
@@ -12,6 +13,7 @@ interface SidebarContentProps {
   onFileSelect: (file: FileTreeNode) => void
   searchQuery?: string
   onCreateConfirm?: (name: string, type: 'file' | 'folder') => void
+  onRenameConfirm?: (newName: string) => void
   className?: string
 }
 
@@ -21,9 +23,10 @@ export function SidebarContent({
   onFileSelect,
   searchQuery = '',
   onCreateConfirm,
+  onRenameConfirm,
   className = ''
 }: SidebarContentProps) {
-  const { viewMode, pinnedFiles, creatingItem, cancelCreating } = useSidebarStore()
+  const { viewMode, pinnedFiles, creatingItem, cancelCreating, renamingItem, cancelRenaming } = useSidebarStore()
 
   // ドットファイル（.で始まるファイル/フォルダ）を除外する関数
   const removeDotFiles = useCallback((nodes: FileTreeNode[]): FileTreeNode[] => {
@@ -147,16 +150,28 @@ export function SidebarContent({
     return (
       <div className="space-y-0.5">
         {filteredFiles.map((node) => (
-          <FileTreeItem
-            key={node.path}
-            node={node}
-            depth={0}
-            isSelected={selectedFilePath === node.path}
-            selectedFilePath={selectedFilePath}
-            onSelect={onFileSelect}
-            onCreateConfirm={onCreateConfirm}
-            getExistingNames={getExistingNames}
-          />
+          renamingItem && renamingItem.path === node.path ? (
+            <div key={node.path} style={{ paddingLeft: '8px' }}>
+              <RenameInput
+                currentName={node.name}
+                type={renamingItem.type}
+                onConfirm={(newName) => onRenameConfirm?.(newName)}
+                onCancel={cancelRenaming}
+              />
+            </div>
+          ) : (
+            <FileTreeItem
+              key={node.path}
+              node={node}
+              depth={0}
+              isSelected={selectedFilePath === node.path}
+              selectedFilePath={selectedFilePath}
+              onSelect={onFileSelect}
+              onCreateConfirm={onCreateConfirm}
+              onRenameConfirm={onRenameConfirm}
+              getExistingNames={getExistingNames}
+            />
+          )
         ))}
         {creatingItem && creatingItem.parentPath === '' && (
           <CreateFileInput

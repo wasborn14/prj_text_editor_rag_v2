@@ -8,11 +8,12 @@ import { useSidebarStore, useSidebarKeyboard } from '@/stores/sidebarStore'
 import { FileTreeNode } from './FileTreeItem'
 import { useCreateFile } from '@/hooks/useCreateFile'
 import { useDeleteFile } from '@/hooks/useDeleteFile'
+import { useRenameFile } from '@/hooks/useRenameFile'
 import { useEditorStore } from '@/stores/editorStore'
 import { UserRepository } from '@/types'
 import { ContextMenu, ContextMenuItem } from '@/components/molecules/ContextMenu/ContextMenu'
 import { ConfirmDialog } from '@/components/molecules/ConfirmDialog/ConfirmDialog'
-import { Trash2, FilePlus, FolderPlus } from 'lucide-react'
+import { Trash2, FilePlus, FolderPlus, Edit2 } from 'lucide-react'
 
 interface SidebarProps {
   files: FileTreeNode[]
@@ -31,11 +32,12 @@ export function Sidebar({
   onRefresh,
   className = ''
 }: SidebarProps) {
-  const { isVisible, width, contextMenu, closeContextMenu, setCreatingItem } = useSidebarStore()
+  const { isVisible, width, contextMenu, closeContextMenu, setCreatingItem, setRenamingItem } = useSidebarStore()
   const { handleKeyboard } = useSidebarKeyboard()
   const { createFile } = useCreateFile()
   const { deleteFile, isDeleting } = useDeleteFile()
-  const { openFile, closeTab, openTabs } = useEditorStore()
+  const { renameFile, isRenaming } = useRenameFile()
+  const { openFile, closeTab, openTabs, updateTabPath } = useEditorStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean
@@ -123,6 +125,62 @@ export function Sidebar({
     closeContextMenu()
   }
 
+  const handleRenameClick = (path: string, type: 'file' | 'dir') => {
+    setRenamingItem({ path, type })
+    closeContextMenu()
+  }
+
+  const handleRenameConfirm = async (newName: string) => {
+    if (!repository) return
+
+    const { renamingItem } = useSidebarStore.getState()
+    if (!renamingItem) return
+
+    const { path: oldPath, type } = renamingItem
+    const parentPath = oldPath.substring(0, oldPath.lastIndexOf('/'))
+    const newPath = parentPath ? `${parentPath}/${newName}` : newName
+
+    try {
+      const result = await renameFile({
+        owner: repository.owner,
+        repo: repository.name,
+        oldPath,
+        newPath,
+        type
+      })
+
+      if (result?.success) {
+        console.log(`Successfully renamed ${type}: ${oldPath} → ${newPath}`)
+
+        // エディタのタブを更新
+        if (type === 'file') {
+          updateTabPath(oldPath, newPath, newName)
+        } else {
+          // フォルダの場合、配下の全ファイルのタブパスを更新
+          openTabs.forEach(tab => {
+            if (tab.path.startsWith(oldPath + '/')) {
+              const relativePath = tab.path.substring(oldPath.length)
+              const newTabPath = newPath + relativePath
+              const newTabName = tab.name
+              updateTabPath(tab.path, newTabPath, newTabName)
+            }
+          })
+        }
+
+        // ファイル一覧を更新
+        if (onRefresh) {
+          onRefresh()
+        }
+
+        const { cancelRenaming } = useSidebarStore.getState()
+        cancelRenaming()
+      }
+    } catch (error) {
+      console.error(`Failed to rename ${type}:`, error)
+      // TODO: エラーをユーザーに表示（トースト通知など）
+    }
+  }
+
   const handleDeleteClick = (path: string, type: 'file' | 'dir') => {
     setConfirmDialog({ isOpen: true, path, type })
     closeContextMenu()
@@ -185,6 +243,11 @@ export function Sidebar({
           onClick: () => handleNewFolderClick(contextMenu.targetType === 'dir' ? contextMenu.targetPath : contextMenu.targetPath.substring(0, contextMenu.targetPath.lastIndexOf('/'))),
         },
         {
+          label: 'Rename',
+          icon: <Edit2 className="w-4 h-4" />,
+          onClick: () => handleRenameClick(contextMenu.targetPath, contextMenu.targetType),
+        },
+        {
           label: 'Delete',
           icon: <Trash2 className="w-4 h-4" />,
           onClick: () => handleDeleteClick(contextMenu.targetPath, contextMenu.targetType),
@@ -244,6 +307,7 @@ export function Sidebar({
           onFileSelect={onFileSelect}
           searchQuery={searchQuery}
           onCreateConfirm={handleCreateConfirm}
+          onRenameConfirm={handleRenameConfirm}
         />
       </div>
 
