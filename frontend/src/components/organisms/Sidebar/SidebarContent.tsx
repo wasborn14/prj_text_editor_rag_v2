@@ -25,15 +25,15 @@ export function SidebarContent({
 }: SidebarContentProps) {
   const { viewMode, pinnedFiles, creatingItem, cancelCreating } = useSidebarStore()
 
-  // .gitkeepファイルを除外する関数
-  const removeGitkeep = useCallback((nodes: FileTreeNode[]): FileTreeNode[] => {
+  // ドットファイル（.で始まるファイル/フォルダ）を除外する関数
+  const removeDotFiles = useCallback((nodes: FileTreeNode[]): FileTreeNode[] => {
     return nodes
-      .filter(node => node.name !== '.gitkeep')
+      .filter(node => !node.name.startsWith('.'))
       .map(node => {
         if (node.type === 'dir' && node.children) {
           return {
             ...node,
-            children: removeGitkeep(node.children)
+            children: removeDotFiles(node.children)
           }
         }
         return node
@@ -42,10 +42,10 @@ export function SidebarContent({
 
   // 検索結果をフィルタリング
   const filteredFiles = useMemo(() => {
-    // まず.gitkeepを除外
-    const filesWithoutGitkeep = removeGitkeep(files)
+    // まずドットファイルを除外
+    const filesWithoutDotFiles = removeDotFiles(files)
 
-    if (!searchQuery.trim()) return filesWithoutGitkeep
+    if (!searchQuery.trim()) return filesWithoutDotFiles
 
     const query = searchQuery.toLowerCase()
 
@@ -74,8 +74,8 @@ export function SidebarContent({
       }, [])
     }
 
-    return filterRecursive(filesWithoutGitkeep)
-  }, [files, searchQuery, removeGitkeep])
+    return filterRecursive(filesWithoutDotFiles)
+  }, [files, searchQuery, removeDotFiles])
 
   // ブックマーク表示用のファイルリスト
   const pinnedFileNodes = useMemo(() => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 interface GitHubTreeItem {
@@ -102,16 +102,24 @@ export async function GET(
           get(name: string) {
             return cookieStore.get(name)?.value
           },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.set({ name, value: '', ...options })
+          },
         },
       }
     )
 
-    const { data: { user } } = await supabase.auth.getUser()
+    // セッションをリフレッシュ（自動的にクッキーも更新される）
     const { data: { session } } = await supabase.auth.getSession()
 
-    if (!user || !session?.provider_token) {
+    if (!session?.user || !session?.provider_token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const user = session.user
 
     const { id } = await params
 
