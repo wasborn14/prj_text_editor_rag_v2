@@ -43,15 +43,17 @@ export default function WorkspacePage() {
   })
 
   const handleFileSelect = (node: FileTreeNode) => {
-    console.log('File selected:', node.path)
-
-    // ファイルの場合のみタブを開く
     if (node.type === 'file') {
+      // ファイルの場合はタブを開く（既存タブがあれば切り替え）
       openFile({
         path: node.path,
         name: node.name,
         type: node.type
       })
+    } else {
+      // ディレクトリの場合はアクティブタブをクリア（エディタを非表示）
+      const { setActiveTab } = useEditorStore.getState()
+      setActiveTab(null)
     }
 
     setSelectedFile(node)

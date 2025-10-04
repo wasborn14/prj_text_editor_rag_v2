@@ -59,10 +59,8 @@ export const useFileContent = ({
       // アクティブタブの内容が空の場合のみ更新
       const activeTab = openTabs.find(tab => tab.id === activeTabId)
       if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
-        console.log('FileContent - File content loaded for:', filePath)
         updateContent(activeTab.id, query.data.content, query.data.sha)
       }
-      // 従来の方式：コールバック
       onSuccess?.(query.data)
     }
   }, [query.isSuccess, query.data, onSuccess, openTabs, activeTabId, updateContent, filePath])
@@ -72,11 +70,9 @@ export const useFileContent = ({
       // アクティブタブにエラーメッセージを表示
       const activeTab = openTabs.find(tab => tab.id === activeTabId)
       if (activeTab && activeTab.content === '' && activeTab.path === filePath) {
-        console.error('FileContent - Content loading error:', query.error)
         const errorMessage = `// Failed to load file: ${query.error.message || 'Unknown error'}`
         updateContent(activeTab.id, errorMessage)
       }
-      // 従来の方式：コールバック
       onError?.(query.error)
     }
   }, [query.isError, query.error, onError, openTabs, activeTabId, updateContent, filePath])

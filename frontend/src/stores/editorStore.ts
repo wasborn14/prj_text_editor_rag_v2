@@ -23,7 +23,7 @@ interface EditorState {
   // タブ管理
   openFile: (file: { path: string; name: string; type: string }) => void
   closeTab: (tabId: string) => void
-  setActiveTab: (tabId: string) => void
+  setActiveTab: (tabId: string | null) => void
   closeAllTabs: () => void
 
   // ファイル操作
@@ -82,7 +82,17 @@ export const useEditorStore = create<EditorState>()(
         // 既に開いているタブがあるかチェック
         const existingTab = openTabs.find(tab => tab.id === tabId)
         if (existingTab) {
-          set({ activeTabId: tabId })
+          // 既存タブの場合、コンテンツをクリアしてローディング状態にする
+          // これによりuseFileContentが再フェッチをトリガーする
+          const updatedTabs = openTabs.map(tab =>
+            tab.id === tabId
+              ? { ...tab, content: '', isLoading: true }
+              : tab
+          )
+          set({
+            openTabs: updatedTabs,
+            activeTabId: tabId
+          })
           return
         }
 
