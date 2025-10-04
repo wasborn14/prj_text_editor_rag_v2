@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { Trash2 } from 'lucide-react'
 
 export interface ContextMenuItem {
   label: string

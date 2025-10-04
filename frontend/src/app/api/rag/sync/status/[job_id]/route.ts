@@ -5,10 +5,10 @@ const VPS_RAG_KEY = process.env.VPS_RAG_KEY || '4f5793c108119abe'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { job_id: string } }
+  { params }: { params: Promise<{ job_id: string }> }
 ) {
   try {
-    const { job_id } = params
+    const { job_id } = await params
 
     const response = await fetch(`${VPS_RAG_ENDPOINT}/sync/status/${job_id}`, {
       method: 'GET',

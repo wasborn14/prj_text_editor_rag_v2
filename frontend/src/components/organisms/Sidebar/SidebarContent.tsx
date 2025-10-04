@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { FileTreeItem, FileListItem, FileTreeNode } from './FileTreeItem'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { Icon } from '@/components/atoms/Icon/Icon'
@@ -26,7 +26,7 @@ export function SidebarContent({
   const { viewMode, pinnedFiles, creatingItem, cancelCreating } = useSidebarStore()
 
   // .gitkeepファイルを除外する関数
-  const removeGitkeep = (nodes: FileTreeNode[]): FileTreeNode[] => {
+  const removeGitkeep = useCallback((nodes: FileTreeNode[]): FileTreeNode[] => {
     return nodes
       .filter(node => node.name !== '.gitkeep')
       .map(node => {
@@ -38,7 +38,7 @@ export function SidebarContent({
         }
         return node
       })
-  }
+  }, [])
 
   // 検索結果をフィルタリング
   const filteredFiles = useMemo(() => {
@@ -75,7 +75,7 @@ export function SidebarContent({
     }
 
     return filterRecursive(filesWithoutGitkeep)
-  }, [files, searchQuery])
+  }, [files, searchQuery, removeGitkeep])
 
   // ブックマーク表示用のファイルリスト
   const pinnedFileNodes = useMemo(() => {
