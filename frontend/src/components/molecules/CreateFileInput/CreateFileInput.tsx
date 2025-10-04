@@ -1,17 +1,19 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { File, Folder, X } from 'lucide-react'
+import { File, Folder, X, AlertCircle } from 'lucide-react'
 
 interface CreateFileInputProps {
   type: 'file' | 'folder'
   parentPath: string
+  existingNames?: string[]
   onConfirm: (name: string) => void
   onCancel: () => void
 }
 
 export function CreateFileInput({
   type,
+  existingNames = [],
   onConfirm,
   onCancel
 }: CreateFileInputProps) {
@@ -24,26 +26,52 @@ export function CreateFileInput({
     inputRef.current?.focus()
   }, [])
 
-  // バリデーション
-  const validate = (name: string): string | null => {
-    if (!name.trim()) {
-      return 'Name cannot be empty'
+  // 重複チェック（リアルタイム）
+  useEffect(() => {
+    if (!value.trim()) {
+      setError(null)
+      return
     }
 
-    // 禁止文字チェック
+    let nameToCheck = value.trim()
+
+    // ファイルの場合、拡張子がなければ.mdを自動追加してチェック
+    if (type === 'file' && !/\.[^.]+$/.test(nameToCheck)) {
+      nameToCheck = `${nameToCheck}.md`
+    }
+
+    // 大文字小文字を区別せずに重複チェック
+    const isDuplicate = existingNames.some(
+      name => name.toLowerCase() === nameToCheck.toLowerCase()
+    )
+
+    if (isDuplicate) {
+      setError(`同じ名前の${type === 'file' ? 'ファイル' : 'フォルダ'}が既に存在します`)
+    } else {
+      setError(null)
+    }
+  }, [value, existingNames, type])
+
+  // 基本的なバリデーション（空文字、禁止文字、長さチェック）
+  const validate = (name: string): string | null => {
+    if (!name.trim()) {
+      return 'ファイル名を入力してください'
+    }
+
+    // 禁止文字チェック（パス区切り、特殊文字など）
     const invalidChars = /[/\\:*?"<>|]/
     if (invalidChars.test(name)) {
-      return 'Name contains invalid characters'
+      return '使用できない文字が含まれています'
     }
 
     // ドットで始まるファイル名を禁止（.gitkeep以外）
     if (name.startsWith('.') && name !== '.gitkeep') {
-      return 'Name cannot start with dot'
+      return 'ドットで始まるファイル名は作成できません'
     }
 
     // 長さチェック
     if (name.length > 255) {
-      return 'Name is too long'
+      return 'ファイル名が長すぎます'
     }
 
     return null
@@ -60,8 +88,8 @@ export function CreateFileInput({
       }
     }
 
+    // 基本的なバリデーション実行（重複チェックはuseEffectで実施済み）
     const validationError = validate(trimmedValue)
-
     if (validationError) {
       setError(validationError)
       return
@@ -81,7 +109,7 @@ export function CreateFileInput({
   }
 
   const handleBlur = () => {
-    // フォーカスが外れたらキャンセル（少し遅延を入れる）
+    // フォーカスが外れたら自動的にキャンセル（100ms遅延でボタンクリックを許容）
     setTimeout(() => {
       if (document.activeElement !== inputRef.current) {
         onCancel()
@@ -90,7 +118,7 @@ export function CreateFileInput({
   }
 
   return (
-    <div className="px-3 py-1 bg-blue-50 border-l-2 border-blue-500">
+    <div className="relative px-3 py-1 bg-blue-50 border-l-2 border-blue-500">
       <div className="flex items-center space-x-2">
         {/* アイコン */}
         {type === 'file' ? (
@@ -106,12 +134,15 @@ export function CreateFileInput({
           value={value}
           onChange={(e) => {
             setValue(e.target.value)
-            setError(null)
           }}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           placeholder={type === 'file' ? 'filename.ext' : 'folder-name'}
-          className="flex-1 px-2 py-0.5 text-sm border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          className={`flex-1 px-2 py-0.5 text-sm border rounded focus:outline-none focus:ring-1 ${
+            error
+              ? 'border-red-400 focus:ring-red-500 focus:border-red-500'
+              : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
+          }`}
         />
 
         {/* キャンセルボタン */}
@@ -124,10 +155,11 @@ export function CreateFileInput({
         </button>
       </div>
 
-      {/* エラーメッセージ */}
+      {/* VSCode風エラー表示 - inputの下に浮いた表示 */}
       {error && (
-        <div className="mt-1 text-xs text-red-600 ml-6">
-          {error}
+        <div className="absolute left-3 right-3 top-full mt-1 z-10 px-2 py-1.5 bg-red-50 border border-red-200 rounded shadow-md flex items-start space-x-2">
+          <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+          <span className="text-xs text-red-700">{error}</span>
         </div>
       )}
     </div>

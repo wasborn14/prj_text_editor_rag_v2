@@ -21,6 +21,7 @@ interface FileTreeItemProps {
   onSelect: (node: FileTreeNode) => void
   onToggleExpand?: (path: string) => void
   onCreateConfirm?: (name: string, type: 'file' | 'folder') => void
+  getExistingNames?: (parentPath: string) => string[]
   className?: string
 }
 
@@ -32,6 +33,7 @@ export function FileTreeItem({
   onSelect,
   onToggleExpand,
   onCreateConfirm,
+  getExistingNames,
   className = ''
 }: FileTreeItemProps) {
   const { isExpanded, toggleFolder, isPinned, togglePin, creatingItem, cancelCreating, setContextMenu } = useSidebarStore()
@@ -148,6 +150,7 @@ export function FileTreeItem({
               onSelect={onSelect}
               onToggleExpand={onToggleExpand}
               onCreateConfirm={onCreateConfirm}
+              getExistingNames={getExistingNames}
             />
           ))}
           {/* このディレクトリ内に作成する場合 */}
@@ -156,6 +159,7 @@ export function FileTreeItem({
               <CreateFileInput
                 type={creatingItem.type}
                 parentPath={creatingItem.parentPath}
+                existingNames={getExistingNames ? getExistingNames(creatingItem.parentPath) : []}
                 onConfirm={(name) => onCreateConfirm?.(name, creatingItem.type)}
                 onCancel={cancelCreating}
               />

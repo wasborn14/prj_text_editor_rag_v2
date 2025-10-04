@@ -96,6 +96,35 @@ export function SidebarContent({
     return allFiles.filter(file => pinnedFiles.includes(file.path))
   }, [files, pinnedFiles])
 
+  // 指定されたparentPath配下の既存ファイル/フォルダ名を取得（重複チェック用）
+  const getExistingNames = (parentPath: string): string[] => {
+    if (parentPath === '') {
+      // ルート直下の場合は、トップレベルのファイル/フォルダ名を返す
+      return files.map(node => node.name)
+    }
+
+    // サブディレクトリの場合は、再帰的にノードを検索
+    const findNode = (nodes: FileTreeNode[], path: string): FileTreeNode | null => {
+      for (const node of nodes) {
+        if (node.path === path) {
+          return node
+        }
+        if (node.children) {
+          const found = findNode(node.children, path)
+          if (found) return found
+        }
+      }
+      return null
+    }
+
+    const parentNode = findNode(files, parentPath)
+    if (parentNode && parentNode.children) {
+      return parentNode.children.map(child => child.name)
+    }
+
+    return []
+  }
+
   // 表示モードに応じたレンダリング
   const renderContent = () => {
     switch (viewMode) {
@@ -126,12 +155,14 @@ export function SidebarContent({
             selectedFilePath={selectedFilePath}
             onSelect={onFileSelect}
             onCreateConfirm={onCreateConfirm}
+            getExistingNames={getExistingNames}
           />
         ))}
         {creatingItem && creatingItem.parentPath === '' && (
           <CreateFileInput
             type={creatingItem.type}
             parentPath={creatingItem.parentPath}
+            existingNames={getExistingNames(creatingItem.parentPath)}
             onConfirm={(name) => onCreateConfirm?.(name, creatingItem.type)}
             onCancel={cancelCreating}
           />
