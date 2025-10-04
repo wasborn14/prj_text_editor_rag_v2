@@ -9,6 +9,14 @@ interface DeleteFileRequest {
   message?: string
 }
 
+interface GitTreeItem {
+  path: string
+  type: 'blob' | 'tree'
+  sha: string
+  size?: number
+  url: string
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -204,7 +212,7 @@ async function deleteDirectory(
     const treeData = await filesResponse.json()
 
     // 指定されたディレクトリ配下のファイルのみをフィルタリング
-    const filesToDelete = treeData.tree.filter((item: any) =>
+    const filesToDelete = (treeData.tree as GitTreeItem[]).filter((item) =>
       item.type === 'blob' && item.path.startsWith(dirPath + '/')
     )
 
