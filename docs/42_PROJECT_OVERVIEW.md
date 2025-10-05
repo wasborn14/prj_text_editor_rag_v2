@@ -21,6 +21,7 @@
 │  │  • Authentication (Supabase + GitHub OAuth)  │   │
 │  │  • File Editor (Novel + TipTap)              │   │
 │  │  • File Tree (Sidebar)                       │   │
+│  │  • RAG Panel (Search, Chat, Sync)            │   │
 │  │  • State Management (Zustand)                │   │
 │  └──────────────────────────────────────────────┘   │
 └───────┬────────────────────────────────────┬─────────┘
@@ -32,6 +33,7 @@
 │   • Repositories  │            │   • Auth           │
 │   • File CRUD     │            │   • User Profiles  │
 │   • OAuth         │            │   • Repositories   │
+│   • Rename        │            │   • Sync Status    │
 └───────────────────┘            └────────────────────┘
         │
         │ Repository Sync
@@ -40,7 +42,7 @@
 │         Backend (FastAPI + ChromaDB + VPS)          │
 │  ┌──────────────────────────────────────────────┐   │
 │  │  • Semantic Search (ChromaDB)                │   │
-│  │  • Repository Indexing                       │   │
+│  │  • Repository Indexing (Background Jobs)     │   │
 │  │  • GitHub Integration (PyGithub)             │   │
 │  │  • Docker + Nginx                            │   │
 │  └──────────────────────────────────────────────┘   │
@@ -50,6 +52,7 @@
 ### 技術スタック
 
 #### Frontend
+
 - **Framework**: Next.js 15.5 (App Router)
 - **Language**: TypeScript 5
 - **UI Library**: React 19
@@ -62,14 +65,17 @@
 - **Deployment**: Vercel
 
 #### Backend
+
 - **Framework**: FastAPI (Python 3.11+)
 - **Vector DB**: ChromaDB
 - **GitHub Integration**: PyGithub
 - **Container**: Docker + Docker Compose
 - **Web Server**: Nginx
 - **Deployment**: ConoHa VPS (Ubuntu 24.04, 2Core/1GB/100GB)
+- **IP Address**: 160.251.211.37
 
 #### Database
+
 - **Primary DB**: Supabase (PostgreSQL)
 - **Vector DB**: ChromaDB (for RAG)
 
@@ -102,6 +108,7 @@
 ### 2. プロフィール管理
 
 **Profile テーブル**:
+
 ```sql
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
@@ -115,6 +122,7 @@ CREATE TABLE profiles (
 ```
 
 **フロー**:
+
 1. 初回ログイン時、`ensureProfile()` が実行される
 2. GitHub メタデータから Profile を作成/更新
 3. Profile 情報を authStore に保存
@@ -122,6 +130,7 @@ CREATE TABLE profiles (
 ### 3. リポジトリ選択
 
 **User Repositories テーブル**:
+
 ```sql
 CREATE TABLE user_repositories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -140,7 +149,23 @@ CREATE TABLE user_repositories (
 );
 ```
 
+**Repository Sync Status テーブル**:
+
+```sql
+CREATE TABLE repository_sync_status (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  repository TEXT UNIQUE NOT NULL,
+  last_synced_at TIMESTAMPTZ,
+  last_sync_status TEXT,
+  files_count INTEGER,
+  updated_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
 **フロー**:
+
 1. ログイン後、`/repository-setup` にリダイレクト
 2. GitHub API でユーザーのリポジトリ一覧を取得
 3. ユーザーがリポジトリを選択
@@ -158,22 +183,22 @@ CREATE TABLE user_repositories (
 #### 構成要素
 
 ```
-┌──────────────────────────────────────────────────┐
-│  Header (User Profile + Repository Name)         │
-├──────────────┬───────────────────────────────────┤
-│   Sidebar    │   Editor Area                     │
-│              │                                   │
-│  • File Tree │  ┌──────────────────────────────┐ │
-│  • Search    │  │  Tab Bar                     │ │
-│  • Create    │  ├──────────────────────────────┤ │
-│  • Delete    │  │                              │ │
-│              │  │  Novel Editor (TipTap)       │ │
-│              │  │  - Markdown editing          │ │
-│              │  │  - Real-time preview         │ │
-│              │  │  - Auto-save                 │ │
-│              │  │                              │ │
-│              │  └──────────────────────────────┘ │
-└──────────────┴───────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  Header (User Profile + Repository Name)                 │
+├──────────────┬───────────────────────────────────────────┤
+│   Sidebar    │   Editor Area               │ RAG Panel   │
+│              │                             │             │
+│  • File Tree │  ┌──────────────────────┐   │ • Search    │
+│  • Search    │  │  Tab Bar             │   │ • Chat      │
+│  • Create    │  ├──────────────────────┤   │ • Sync      │
+│  • Rename    │  │                      │   │             │
+│  • Delete    │  │  Novel Editor        │   │             │
+│              │  │  - Markdown editing  │   │             │
+│              │  │  - Real-time preview │   │             │
+│              │  │  - Auto-save         │   │             │
+│              │  │                      │   │             │
+│              │  └──────────────────────┘   │             │
+└──────────────┴───────────────────────────────────────────┘
 ```
 
 ### 2. サイドバー (Sidebar)
@@ -183,24 +208,46 @@ CREATE TABLE user_repositories (
 #### 機能
 
 - **ファイルツリー表示**
+
   - GitHub リポジトリの階層構造を表示
   - ディレクトリの展開/折りたたみ
   - ファイル/ディレクトリの選択（青いハイライト）
+  - ドットファイル（`.gitkeep`, `.gitignore` など）の自動非表示
 
 - **ファイル/フォルダ作成**
+
   - FilePlus/FolderPlus ボタン
   - インライン入力フィールド
   - 自動で `.md` 拡張子を追加
   - 選択中のディレクトリ内に作成
   - 閉じているディレクトリは自動展開
 
+- **ファイル/フォルダ名前変更**
+
+  - 右クリックメニューから「Rename」を選択
+  - インライン編集モード
+  - ファイル拡張子の自動選択
+  - エディタで開いているタブのパスも自動更新
+  - フォルダ名変更時は配下の全ファイルのパスも更新
+
 - **ファイル/フォルダ削除**
-  - 右クリックメニュー
+
+  - 右クリックメニューから「Delete」を選択
   - 削除確認ダイアログ
   - ローディング表示
   - 開いているタブの自動クローズ
+  - フォルダ削除時は配下の全ファイルを再帰的に削除
+
+- **コンテキストメニュー**
+
+  - 右クリックで表示
+  - New File: 新規ファイル作成
+  - New Folder: 新規フォルダ作成
+  - Rename: 名前変更
+  - Delete: 削除
 
 - **検索**
+
   - ファイル名検索
   - リアルタイムフィルタリング
 
@@ -211,27 +258,34 @@ CREATE TABLE user_repositories (
 #### 状態管理
 
 **SidebarStore** (`frontend/src/stores/sidebarStore.ts`):
+
 ```typescript
 interface SidebarState {
-  isVisible: boolean
-  width: number
-  viewMode: 'tree' | 'list' | 'bookmarks'
-  pinnedFiles: string[]
-  expandedFolders: Set<string>
+  isVisible: boolean;
+  width: number;
+  viewMode: "tree" | "list" | "bookmarks";
+  pinnedFiles: string[];
+  expandedFolders: Set<string>;
 
   // ファイル/フォルダ作成
   creatingItem: {
-    type: 'file' | 'folder'
-    parentPath: string
-  } | null
+    type: "file" | "folder";
+    parentPath: string;
+  } | null;
+
+  // ファイル/フォルダ名前変更
+  renamingItem: {
+    path: string;
+    type: "file" | "dir";
+  } | null;
 
   // コンテキストメニュー
   contextMenu: {
-    x: number
-    y: number
-    targetPath: string
-    targetType: 'file' | 'dir'
-  } | null
+    x: number;
+    y: number;
+    targetPath: string;
+    targetType: "file" | "dir";
+  } | null;
 }
 ```
 
@@ -242,11 +296,14 @@ interface SidebarState {
 #### 機能
 
 - **マルチタブ編集**
+
   - 複数ファイルを同時に開ける
   - タブ間の切り替え
   - タブのクローズ
+  - isDirty 表示（未保存変更）
 
 - **Novel エディター**
+
   - WYSIWYG Markdown エディター
   - リアルタイムプレビュー
   - スラッシュコマンド
@@ -261,35 +318,83 @@ interface SidebarState {
 #### 状態管理
 
 **EditorStore** (`frontend/src/stores/editorStore.ts`):
+
 ```typescript
 interface EditorTab {
-  id: string
-  path: string
-  name: string
-  content: string
-  isDirty: boolean
-  language: string
-  isLoading: boolean
-  isSaving: boolean
-  lastSaved?: Date
-  sha?: string  // GitHub API 用
+  id: string;
+  path: string;
+  name: string;
+  content: string;
+  isDirty: boolean;
+  language: string;
+  isLoading: boolean;
+  isSaving: boolean;
+  lastSaved?: Date;
+  sha?: string; // GitHub API 用
 }
 
 interface EditorState {
-  openTabs: EditorTab[]
-  activeTabId: string | null
+  openTabs: EditorTab[];
+  activeTabId: string | null;
 
   // タブ管理
-  openFile(file)
-  closeTab(tabId)
-  setActiveTab(tabId)
-  closeAllTabs()
+  openFile(file);
+  closeTab(tabId);
+  setActiveTab(tabId);
+  closeAllTabs();
+  updateTabPath(oldPath, newPath, newName); // 名前変更用
 
   // ファイル操作
-  updateContent(tabId, content, sha?)
-  updateSha(tabId, sha)
-  markSaved(tabId)
+  updateContent(tabId, content, sha?, markDirty?);
+  updateSha(tabId, sha);
+  markSaved(tabId, content?, sha?);
 }
+```
+
+### 4. RAG パネル (RAG Panel)
+
+**コンポーネント**: `frontend/src/components/organisms/RAGPanel/`
+
+#### 機能
+
+- **Search タブ**
+
+  - セマンティック検索
+  - VPS の ChromaDB を使用
+  - 検索結果の表示（関連度スコア付き）
+
+- **Chat タブ**
+
+  - AI チャット（将来実装予定）
+  - コンテキストを含む会話
+
+- **Sync タブ**
+  - リポジトリの同期
+  - 非同期ジョブ処理（ポーリング方式）
+  - 同期履歴の表示（Supabase に保存）
+  - 最終同期時刻の表示
+
+#### 同期フロー
+
+```
+1. ユーザーが「Sync」ボタンをクリック
+   └─> RAGSync.tsx: handleSync()
+
+2. /api/rag/sync を呼び出し
+   └─> VPS に job_id を要求
+
+3. VPS がバックグラウンドジョブを開始
+   └─> job_id を返却
+
+4. フロントエンドがポーリング開始
+   └─> /api/rag/sync/status/{job_id}
+   └─> 3秒ごとに60回（最大3分）
+
+5. ジョブ完了時、Supabase に履歴を保存
+   └─> repository_sync_status テーブル
+
+6. React Query でキャッシュを invalidate
+   └─> 最新の同期情報を表示
 ```
 
 ---
@@ -301,6 +406,7 @@ interface EditorState {
 #### 認証関連
 
 - **GET** `/api/profile`
+
   - ユーザープロフィール取得
   - Supabase から Profile 情報を取得
 
@@ -311,34 +417,52 @@ interface EditorState {
 #### リポジトリ関連
 
 - **GET** `/api/repositories`
+
   - ユーザーのリポジトリ一覧取得
   - GitHub API + Supabase から取得
 
 - **POST** `/api/repositories/select`
+
   - リポジトリを選択
   - Supabase に保存 (`is_selected = true`)
 
-- **GET** `/api/repositories/{owner}/{repo}/files`
+- **GET** `/api/repositories/selected`
+
+  - 選択中のリポジトリ取得
+
+- **GET** `/api/repositories/{id}/files`
   - リポジトリのファイル構造取得
   - GitHub API からツリー構造を取得
+  - セッション自動更新対応（401 エラー防止）
 
 #### ファイル操作
 
 - **GET** `/api/github/file-content`
+
   - ファイル内容取得
   - Query: `owner`, `repo`, `path`
   - Response: `{ content, sha, encoding }`
 
 - **POST** `/api/github/save-file`
+
   - ファイル保存
   - Body: `{ owner, repo, path, content, sha?, message? }`
   - Response: `{ success, sha }`
 
 - **POST** `/api/github/create-file`
+
   - ファイル/フォルダ作成
   - Body: `{ owner, repo, path, content?, type: 'file' | 'folder' }`
   - フォルダ作成時は `.gitkeep` を含む
   - Response: `{ success, path, sha, type }`
+
+- **POST** `/api/github/rename-file`
+
+  - ファイル/フォルダ名前変更
+  - Body: `{ owner, repo, oldPath, newPath, type: 'file' | 'dir', message? }`
+  - 内部的には「コピー + 削除」
+  - フォルダの場合は配下の全ファイルを再帰的に処理
+  - Response: `{ success, oldPath, newPath, type, renamedFiles?, sha? }`
 
 - **DELETE** `/api/github/delete-file`
   - ファイル/フォルダ削除
@@ -346,22 +470,59 @@ interface EditorState {
   - フォルダは再帰的に削除
   - Response: `{ success, path, type, deletedFiles? }`
 
+#### RAG 関連
+
+- **POST** `/api/rag/search`
+
+  - セマンティック検索（VPS プロキシ）
+  - Body: `{ query, repository, n_results? }`
+
+- **POST** `/api/rag/chat`
+
+  - AI チャット（VPS プロキシ）
+  - Body: `{ message, repository, context? }`
+
+- **POST** `/api/rag/sync`
+
+  - リポジトリ同期開始（VPS プロキシ）
+  - Body: `{ repository, force? }`
+  - Response: `{ job_id, status, repository }`
+
+- **GET** `/api/rag/sync/status/{job_id}`
+  - 同期ジョブステータス取得（VPS プロキシ）
+  - Response: `{ status, repository, files_synced?, message?, error? }`
+
 ### Backend API (VPS RAG)
 
-**Base URL**: `http://160.251.211.37:8001`
+**Base URL**: `http://160.251.211.37/api`
 
 - **GET** `/health`
+
   - ヘルスチェック
 
 - **POST** `/api/search`
+
   - セマンティック検索
   - Body: `{ query, repository, n_results? }`
   - ChromaDB でベクトル検索
+  - Authorization: `Bearer test123`
 
 - **POST** `/api/sync`
-  - リポジトリ同期
-  - Body: `{ repository }`
-  - GitHub リポジトリを ChromaDB にインデックス
+
+  - リポジトリ同期（非同期）
+  - Body: `{ repository, force? }`
+  - バックグラウンドジョブで実行
+  - メモリベースのジョブキュー（1 時間で自動削除）
+  - Response: `{ job_id, status, repository }`
+
+- **GET** `/api/sync/status/{job_id}`
+
+  - 同期ジョブステータス取得
+  - Response:
+    - `{ status: "processing", repository, started_at }`
+    - `{ status: "completed", repository, files_synced, message, completed_at }`
+    - `{ status: "error", repository, error, started_at }`
+    - `{ status: "not_found", message }`
 
 - **GET** `/api/repository/structure`
   - リポジトリ構造取得
@@ -379,7 +540,7 @@ interface EditorState {
 
 2. editorStore.openFile() が呼ばれる
    └─> 既存タブがあればアクティブ化
-   └─> なければ新規タブ作成
+   └─> なければ新規タブ作成（content: '', isLoading: true）
 
 3. useFileContent() フックが実行される
    └─> /api/github/file-content を呼び出し
@@ -387,8 +548,10 @@ interface EditorState {
 
 4. editorStore.updateContent() でコンテンツを更新
    └─> SHA も一緒に保存（競合防止用）
+   └─> markDirty: false（初期ロード時は未編集）
 
 5. Novel エディターにコンテンツを表示
+   └─> key={activeTab.id} で強制再マウント
 ```
 
 ### ファイル保存フロー
@@ -402,9 +565,10 @@ interface EditorState {
    └─> GitHub API PUT でファイル更新
 
 3. 新しい SHA を取得
-   └─> editorStore.updateSha() で更新
+   └─> editorStore.markSaved() で更新
+   └─> 現在の content と新しい sha を保存
 
-4. editorStore.markSaved()
+4. タブの状態を更新
    └─> isDirty = false
    └─> lastSaved = new Date()
 ```
@@ -436,30 +600,60 @@ interface EditorState {
    └─> editorStore.openFile()
 ```
 
+### ファイル名前変更フロー
+
+```
+1. ユーザーがファイル/フォルダを右クリック
+   └─> FileTreeItem: handleContextMenu()
+
+2. ContextMenu で「Rename」をクリック
+   └─> Sidebar: handleRenameClick()
+   └─> sidebarStore.setRenamingItem({ path, type })
+
+3. RenameInput コンポーネントを表示
+   └─> ファイル名（拡張子除く）を自動選択
+
+4. ユーザーが新しい名前を入力して Enter
+   └─> Sidebar: handleRenameConfirm()
+
+5. /api/github/rename-file を呼び出し
+   └─> 新しいパスにファイルを作成
+   └─> 古いパスのファイルを削除
+   └─> フォルダの場合は配下の全ファイルを処理
+
+6. エディタのタブを更新
+   └─> editorStore.updateTabPath(oldPath, newPath, newName)
+   └─> フォルダの場合は配下の全タブを更新
+
+7. ファイルリストを更新
+   └─> refetchFiles()
+
+8. 名前変更モードを終了
+   └─> sidebarStore.cancelRenaming()
+```
+
 ### ファイル削除フロー
 
 ```
 1. ユーザーがファイルを右クリック
    └─> FileTreeItem: handleContextMenu()
-   └─> sidebarStore.setContextMenu()
 
-2. ContextMenu を表示
-
-3. ユーザーが「Delete」をクリック
+2. ContextMenu で「Delete」をクリック
    └─> Sidebar: handleDeleteClick()
    └─> ConfirmDialog を表示
 
-4. ユーザーが「Delete」を確認
+3. ユーザーが「Delete」を確認
    └─> Sidebar: handleDeleteConfirm()
 
-5. /api/github/delete-file を呼び出し
+4. /api/github/delete-file を呼び出し
    └─> GitHub API DELETE でファイル削除
    └─> フォルダの場合は再帰的に全ファイルを削除
 
-6. 開いているタブをクローズ
+5. 開いているタブをクローズ
    └─> editorStore.closeTab()
+   └─> フォルダの場合は配下の全タブをクローズ
 
-7. ファイルリストを更新
+6. ファイルリストを更新
    └─> refetchFiles()
 ```
 
@@ -476,7 +670,22 @@ frontend/
 │   │   ├── layout.tsx                # Root layout (AuthProvider)
 │   │   ├── page.tsx                  # Login page
 │   │   ├── repository-setup/         # Repository selection
-│   │   └── workspace/                # Main workspace
+│   │   ├── workspace/                # Main workspace
+│   │   └── api/                      # API Routes
+│   │       ├── profile/              # Profile API
+│   │       ├── repositories/         # Repository API
+│   │       ├── github/               # GitHub API proxy
+│   │       │   ├── file-content/
+│   │       │   ├── save-file/
+│   │       │   ├── create-file/
+│   │       │   ├── rename-file/      # 名前変更
+│   │       │   └── delete-file/
+│   │       └── rag/                  # RAG API proxy
+│   │           ├── search/
+│   │           ├── chat/
+│   │           └── sync/
+│   │               ├── route.ts
+│   │               └── status/[job_id]/
 │   │
 │   ├── components/
 │   │   ├── atoms/                    # 基本コンポーネント
@@ -486,11 +695,17 @@ frontend/
 │   │   │   ├── ConfirmDialog/
 │   │   │   ├── ContextMenu/
 │   │   │   ├── CreateFileInput/
+│   │   │   ├── RenameInput/          # 名前変更入力
 │   │   │   └── LoadingScreen/
 │   │   └── organisms/                # 大規模コンポーネント
 │   │       ├── Editor/               # エディター
 │   │       ├── Header/               # ヘッダー
-│   │       └── Sidebar/              # サイドバー
+│   │       ├── Sidebar/              # サイドバー
+│   │       └── RAGPanel/             # RAG パネル
+│   │           ├── RAGPanel.tsx
+│   │           ├── RAGSearch.tsx
+│   │           ├── RAGChat.tsx
+│   │           └── RAGSync.tsx
 │   │
 │   ├── stores/                       # Zustand stores
 │   │   ├── authStore.ts              # 認証状態
@@ -503,9 +718,16 @@ frontend/
 │   │   ├── useFileContent.ts
 │   │   ├── useSaveFile.ts
 │   │   ├── useCreateFile.ts
-│   │   └── useDeleteFile.ts
+│   │   ├── useRenameFile.ts          # 名前変更
+│   │   ├── useDeleteFile.ts
+│   │   ├── useRAGSearch.ts
+│   │   ├── useRAGChat.ts
+│   │   └── useRAGSync.ts
 │   │
-│   ├── lib/                          # Utilities
+│   ├── utils/                        # Utilities
+│   │   └── time.ts                   # formatRelativeTime
+│   │
+│   ├── lib/                          # Libraries
 │   │   ├── supabase.ts               # Supabase client
 │   │   └── supabase-server.ts        # Supabase server client
 │   │
@@ -524,6 +746,8 @@ backend/
 ├── api/
 │   ├── main.py                       # FastAPI app
 │   ├── rag_system.py                 # ChromaDB integration
+│   ├── routers/
+│   │   └── sync.py                   # 同期エンドポイント（非同期）
 │   └── requirements.txt
 ├── data/                             # ChromaDB data
 ├── docker-compose.yml                # Development
@@ -541,6 +765,10 @@ backend/
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# VPS RAG Backend
+VPS_RAG_ENDPOINT=http://160.251.211.37/api
+VPS_RAG_KEY=test123
 
 # GitHub (not needed - uses Supabase provider_token)
 # GITHUB_TOKEN is obtained via OAuth
@@ -569,6 +797,8 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxx
 2. 環境変数を設定:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `VPS_RAG_ENDPOINT`
+   - `VPS_RAG_KEY`
 3. デプロイ
 4. Supabase Dashboard で Redirect URLs を設定:
    - `https://your-app.vercel.app`
@@ -594,6 +824,16 @@ docker-compose -f docker-compose.prod.yml up -d
 
 # Check logs
 docker-compose -f docker-compose.prod.yml logs -f api
+
+# Health check
+curl http://localhost:8001/health
+```
+
+**VPS デプロイスクリプト** (`deployment/scripts/deploy_vps.sh`):
+
+```bash
+chmod +x deployment/scripts/deploy_vps.sh
+./deployment/scripts/deploy_vps.sh
 ```
 
 ---
@@ -606,10 +846,12 @@ docker-compose -f docker-compose.prod.yml logs -f api
 - **GitHub OAuth**: `repo read:user user:email` スコープで必要最小限の権限
 - **Provider Token**: Supabase が GitHub Personal Access Token を保存
 - **API Routes**: すべての API ルートで Supabase セッションを検証
+- **Session Refresh**: 1 時間ごとに自動セッション更新（401 エラー防止）
 
 ### データ保護
 
 - **RLS Policies**:
+
   ```sql
   -- Profiles: 自分のプロフィールのみアクセス可能
   CREATE POLICY "Users can view own profile"
@@ -620,10 +862,16 @@ docker-compose -f docker-compose.prod.yml logs -f api
   CREATE POLICY "Users can view own repositories"
     ON user_repositories FOR SELECT
     USING (auth.uid() = user_id);
+
+  -- Repository Sync Status: 全ユーザーが閲覧可能
+  CREATE POLICY "Users can view sync status"
+    ON repository_sync_status FOR SELECT
+    USING (true);
   ```
 
 - **GitHub API**: ユーザーの GitHub 権限に基づいてアクセス制御
 - **HTTPS**: すべての通信を暗号化
+- **VPS API**: Bearer Token 認証 (`test123`)
 
 ---
 
@@ -632,25 +880,37 @@ docker-compose -f docker-compose.prod.yml logs -f api
 ### フロントエンド
 
 - **React Query**:
-  - データキャッシュ (5分間)
+
+  - データキャッシュ (5 分間)
   - 自動リフェッチ
-  - Optimistic Updates (将来実装予定)
+  - Invalidation on mutation
+  - Polling for job status (3 秒ごと、最大 3 分)
 
 - **Zustand**:
+
   - グローバル状態管理
   - パフォーマンスの良いセレクター
   - DevTools 統合
+  - LocalStorage 永続化
 
 - **Next.js**:
   - Server Components
   - Image Optimization
   - Code Splitting
+  - Edge Runtime (middleware)
 
 ### バックエンド
 
 - **ChromaDB**:
+
   - ベクトル検索の高速化
   - インメモリキャッシュ
+
+- **FastAPI**:
+
+  - BackgroundTasks で非同期処理
+  - メモリベースのジョブキュー
+  - 1 時間ごとに古いジョブを自動削除
 
 - **Docker**:
   - メモリ制限 (800MB)
@@ -663,49 +923,64 @@ docker-compose -f docker-compose.prod.yml logs -f api
 
 ### Frontend
 
-1. **.gitkeep の表示**
-   - フォルダ作成時に `.gitkeep` が作成される
-   - サイドバーでは非表示に設定済み
+1. **ドットファイルの非表示**
+
+   - `.` で始まるファイル/フォルダは自動的に非表示
+   - `.gitkeep`, `.gitignore` なども非表示
 
 2. **大きなファイルの処理**
+
    - GitHub API は 1MB 以上のファイルに制限あり
    - Base64 エンコーディングのオーバーヘッド
 
 3. **リアルタイム同期**
+
    - 現在は手動リフレッシュのみ
    - 将来的に WebSocket 対応予定
+
+4. **フォルダ名前変更のパフォーマンス**
+   - 大量のファイルを含むフォルダの名前変更に時間がかかる
+   - GitHub API の Rate Limit に注意
 
 ### Backend
 
 1. **メモリ制限**
+
    - VPS は 1GB RAM のみ
    - 大規模リポジトリの同期に時間がかかる
 
 2. **Rate Limiting**
+
    - GitHub API の制限 (5000 req/hour)
    - ChromaDB の同時リクエスト制限
+
+3. **ジョブ永続化**
+   - メモリベースのため、再起動でジョブ情報が消失
+   - 長時間実行ジョブは Redis 化を検討
 
 ---
 
 ## 今後のロードマップ
 
-### 短期 (1-2ヶ月)
+### 短期 (1-2 ヶ月)
 
-- [ ] ファイル/フォルダのリネーム機能
+- [x] ファイル/フォルダのリネーム機能
+- [x] RAG パネルの統合
+- [x] 非同期ジョブポーリング
 - [ ] ドラッグ&ドロップでファイル移動
 - [ ] キーボードショートカット拡充
 - [ ] エラーハンドリングの改善（トースト通知）
 - [ ] Optimistic UI の実装
 
-### 中期 (3-6ヶ月)
+### 中期 (3-6 ヶ月)
 
-- [ ] RAG 検索の UI 統合
-- [ ] AI アシスタント機能
+- [ ] RAG チャット機能
+- [ ] AI アシスタント機能（コード補完）
 - [ ] リアルタイム同期（WebSocket）
 - [ ] コラボレーション機能
 - [ ] モバイル対応
 
-### 長期 (6ヶ月以上)
+### 長期 (6 ヶ月以上)
 
 - [ ] LangChain 統合
 - [ ] マルチリポジトリサポート
@@ -718,21 +993,27 @@ docker-compose -f docker-compose.prod.yml logs -f api
 ## 関連ドキュメント
 
 ### 認証・セットアップ
+
 - [38_GITHUB_OAUTH_AUTHENTICATION.md](./38_GITHUB_OAUTH_AUTHENTICATION.md) - GitHub OAuth 認証フロー
 - [22_SUPABASE_DATA_MANAGEMENT.md](./22_SUPABASE_DATA_MANAGEMENT.md) - Supabase データ管理
 - [23_SUPABASE_SCHEMA_SETUP.md](./23_SUPABASE_SCHEMA_SETUP.md) - データベーススキーマ
+- [44_REPOSITORY_SYNC_STATUS_TABLE.md](./44_REPOSITORY_SYNC_STATUS_TABLE.md) - 同期ステータステーブル
 
 ### 機能実装
+
 - [41_IMPLEMENTED_FEATURES_SUMMARY.md](./41_IMPLEMENTED_FEATURES_SUMMARY.md) - 実装済み機能まとめ
 - [39_FILE_FOLDER_CREATION_PLAN.md](./39_FILE_FOLDER_CREATION_PLAN.md) - ファイル/フォルダ作成
 - [40_FILE_DELETION_PLAN.md](./40_FILE_DELETION_PLAN.md) - ファイル/フォルダ削除
 - [36_FILE_EDITOR_IMPLEMENTATION_PLAN.md](./36_FILE_EDITOR_IMPLEMENTATION_PLAN.md) - エディター実装
+- [43_RAG_PANEL_IMPLEMENTATION.md](./43_RAG_PANEL_IMPLEMENTATION.md) - RAG パネル実装
 
 ### アーキテクチャ
+
 - [19_FRONTEND_ARCHITECTURE_CLEAN.md](./19_FRONTEND_ARCHITECTURE_CLEAN.md) - フロントエンドアーキテクチャ
 - [27_ZUSTAND_MIGRATION_AND_ENHANCEMENTS.md](./27_ZUSTAND_MIGRATION_AND_ENHANCEMENTS.md) - Zustand 移行
 
 ### バックエンド
+
 - [11_VPS_SETUP_GUIDE.md](./11_VPS_SETUP_GUIDE.md) - VPS セットアップ
 - [08_VPS_RAG_TESTING_GUIDE.md](./08_VPS_RAG_TESTING_GUIDE.md) - RAG テストガイド
 - [04_VPS_RAG_IMPLEMENTATION.md](./04_VPS_RAG_IMPLEMENTATION.md) - RAG 実装詳細
@@ -764,6 +1045,31 @@ docker-compose -f docker-compose.prod.yml logs -f api
 - **Database**: Supabase Dashboard
 - **GitHub API**: GitHub API Rate Limit ヘッダーを確認
 
+### Common Commands
+
+```bash
+# Frontend
+cd frontend
+npm run dev              # Development server
+npm run build            # Production build
+npm run lint             # ESLint
+
+# Backend (Local)
+cd backend
+docker-compose up -d     # Start services
+docker-compose logs -f   # View logs
+docker-compose down      # Stop services
+
+# Backend (VPS)
+ssh root@160.251.211.37
+cd /opt/prj_text_editor_rag_v1/backend
+docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml logs -f rag-api
+
+# VPS Health Check
+curl http://160.251.211.37/api/health
+```
+
 ---
 
 ## サポート
@@ -780,4 +1086,4 @@ MIT License
 
 ---
 
-**最終更新**: 2025年10月4日
+**最終更新**: 2025 年 10 月 5 日
