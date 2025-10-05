@@ -87,10 +87,10 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // セッション取得
+  // セッション取得（自動リフレッシュ付き）
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
 
@@ -100,7 +100,7 @@ export async function middleware(request: NextRequest) {
 
   // 認証が必要なパス（パブリックパス以外）
   if (!isPublicPath) {
-    if (!session) {
+    if (!user) {
       // 未認証の場合はホームページへリダイレクト
       return NextResponse.redirect(new URL('/', request.url))
     }
@@ -108,7 +108,7 @@ export async function middleware(request: NextRequest) {
 
   // 認証済みユーザーが未認証専用ページへアクセスした場合
   if (unauthenticatedOnlyPaths.includes(path)) {
-    if (session) {
+    if (user) {
       // 既に認証済みの場合はダッシュボードへリダイレクト
       return NextResponse.redirect(new URL('/workspace', request.url))
     }
