@@ -13,6 +13,7 @@ interface AuthState {
   githubToken: string | null
   selectedRepository: UserRepository | null
   repositorySetupCompleted: boolean
+  refreshIntervalId: NodeJS.Timeout | null
 
   setUser: (user: User | null) => void
   setSession: (session: Session | null) => void
@@ -31,6 +32,8 @@ interface AuthState {
   ensureProfile: (user: User) => Promise<void>
   checkRepositorySelection: () => Promise<void>
   initialize: () => Promise<void>
+  startSessionRefresh: () => void
+  stopSessionRefresh: () => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -41,6 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   githubToken: null,
   selectedRepository: null,
   repositorySetupCompleted: false,
+  refreshIntervalId: null,
 
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
@@ -52,6 +56,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   startLoading: () => set({ loading: true }),
   stopLoading: () => set({ loading: false }),
+
+  startSessionRefresh: () => {
+    const { refreshIntervalId } = get()
+
+    // 既にタイマーが動いていれば何もしない
+    if (refreshIntervalId) return
+
+    const supabase = createClient()
+
+    const intervalId = setInterval(async () => {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (data?.session) {
+        set({
+          session: data.session,
+          user: data.session.user,
+          githubToken: data.session.provider_token || null
+        })
+        console.log('Session refreshed automatically')
+      } else if (error) {
+        console.error('Session refresh failed:', error)
+        get().stopSessionRefresh()
+      }
+    }, 50 * 60 * 1000) // 50分
+
+    set({ refreshIntervalId: intervalId })
+  },
+
+  stopSessionRefresh: () => {
+    const { refreshIntervalId } = get()
+    if (refreshIntervalId) {
+      clearInterval(refreshIntervalId)
+      set({ refreshIntervalId: null })
+    }
+  },
 
   refreshProfile: async () => {
     const { user } = get()
@@ -141,6 +179,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     const supabase = createClient()
 
+    // タイマーを停止
+    get().stopSessionRefresh()
+
     // stateクリア
     set({
       user: null,
@@ -198,19 +239,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       githubToken: session?.provider_token || null,
     })
 
-    const { ensureProfile, checkRepositorySelection, startLoading, stopLoading } = get()
+    const { ensureProfile, checkRepositorySelection, startLoading, stopLoading, startSessionRefresh } = get()
 
     if (session?.user) {
       startLoading() // プロファイルとリポジトリ選択状態の確認中
       await ensureProfile(session.user)
       await checkRepositorySelection()
       stopLoading() // 全ての初期化処理が完了
+
+      // ログイン中はセッション自動リフレッシュを開始
+      startSessionRefresh()
     } else {
       stopLoading()
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
-      const { ensureProfile, refreshProfile, checkRepositorySelection, startLoading, stopLoading } = get()
+      const { ensureProfile, refreshProfile, checkRepositorySelection, startLoading, stopLoading, startSessionRefresh, stopSessionRefresh } = get()
 
       // 基本的なセッション情報を更新
       set({
@@ -225,8 +269,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await ensureProfile(session.user)
         await checkRepositorySelection()
         stopLoading()
+
+        // 自動リフレッシュ開始
+        startSessionRefresh()
       } else if (event === 'SIGNED_OUT') {
-        // サインアウト時: 全てのユーザー関連データをクリア
+        // サインアウト時: 全てのユーザー関連データをクリアし、タイマーを停止
+        stopSessionRefresh()
         set({
           profile: null,
           selectedRepository: null,
@@ -239,6 +287,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await refreshProfile()
         await checkRepositorySelection()
         stopLoading()
+
+        // 自動リフレッシュ開始
+        startSessionRefresh()
       } else {
         // それ以外: ローディング解除のみ
         stopLoading()
