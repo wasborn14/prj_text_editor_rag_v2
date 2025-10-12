@@ -123,7 +123,8 @@ cd /opt/prj_text_editor_rag_v1
 ### 2. GitHubからソースコード取得
 ```bash
 # リポジトリクローン（HTTPSで認証情報含む）
-git clone https://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@github.com/wasborn14/prj_text_editor_rag_v1.git .
+# Note: Replace YOUR_GITHUB_TOKEN with your actual token
+git clone https://YOUR_GITHUB_TOKEN@github.com/wasborn14/prj_text_editor_rag_v1.git .
 
 # ディレクトリ確認
 ls -la
@@ -141,7 +142,7 @@ nano .env.prod
 ### 4. .env.prod ファイル内容
 ```bash
 # GitHub API設定
-GITHUB_TOKEN=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
+GITHUB_TOKEN=your_github_personal_access_token_here
 
 # RAG API設定
 RAG_API_KEY=test123
