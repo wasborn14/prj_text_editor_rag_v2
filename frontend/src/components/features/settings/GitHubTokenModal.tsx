@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { useAuthStore } from '@/stores/authStore'
-import { ExternalLink, AlertCircle, Loader2 } from 'lucide-react'
+import { ExternalLink, AlertCircle, Loader2, LogOut } from 'lucide-react'
 
 interface GitHubTokenModalProps {
   isOpen: boolean
@@ -33,7 +33,7 @@ const MESSAGES = {
 }
 
 export function GitHubTokenModal({ isOpen, reason }: GitHubTokenModalProps) {
-  const saveGithubToken = useAuthStore((state) => state.saveGithubToken)
+  const { saveGithubToken, signOut } = useAuthStore()
 
   const {
     register,
@@ -64,6 +64,10 @@ export function GitHubTokenModal({ isOpen, reason }: GitHubTokenModalProps) {
             : 'トークンの保存に失敗しました。トークンが有効か確認してください。',
       })
     }
+  }
+
+  const handleLogout = async () => {
+    await signOut()
   }
 
   return (
@@ -183,7 +187,15 @@ export function GitHubTokenModal({ isOpen, reason }: GitHubTokenModalProps) {
             )}
 
             {/* ボタン */}
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                <LogOut className="h-4 w-4" />
+                ログアウト
+              </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
