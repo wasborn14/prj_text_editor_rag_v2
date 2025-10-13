@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useRepositories } from '@/hooks/useRepositories'
 import { useFileTree } from '@/hooks/useFileTree'
+import { useSelectedRepository } from '@/hooks/useSelectedRepository'
 import { GitHubTokenModal } from '@/components/features/settings'
 import {
   DashboardHeader,
@@ -19,7 +20,6 @@ export default function DashboardPage() {
   const { user, githubToken, signOut, needsTokenSetup, tokenSetupReason } =
     useAuthStore()
 
-  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null)
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
 
   // TanStack Queryを使用してデータ取得
@@ -28,6 +28,29 @@ export default function DashboardPage() {
     isLoading: repoLoading,
     error: repoError,
   } = useRepositories(githubToken)
+
+  // 選択されたリポジトリの取得と保存
+  const {
+    selectedRepository,
+    saveSelectedRepository,
+  } = useSelectedRepository()
+
+  // 保存されているリポジトリまたはユーザーが選択したリポジトリを決定
+  const [manualSelectedRepo, setManualSelectedRepo] = useState<Repository | null>(null)
+
+  const selectedRepo = useMemo(() => {
+    // ユーザーが手動で選択した場合はそれを優先
+    if (manualSelectedRepo) return manualSelectedRepo
+
+    // 保存されているリポジトリを復元
+    if (selectedRepository && repositories.length > 0) {
+      return repositories.find(
+        (r) => r.full_name === selectedRepository.repository_full_name
+      ) || null
+    }
+
+    return null
+  }, [manualSelectedRepo, selectedRepository, repositories])
 
   const {
     data: fileTree = [],
@@ -41,10 +64,25 @@ export default function DashboardPage() {
     await signOut()
   }
 
-  const handleRepoChange = (repoFullName: string) => {
+  const handleRepoChange = async (repoFullName: string) => {
     const repo = repositories.find((r) => r.full_name === repoFullName)
-    setSelectedRepo(repo || null)
+    setManualSelectedRepo(repo || null)
     setExpandedDirs(new Set())
+
+    // Supabaseに保存
+    if (repo) {
+      const [owner, name] = repo.full_name.split('/')
+      try {
+        await saveSelectedRepository({
+          repository_id: repo.id,
+          repository_full_name: repo.full_name,
+          repository_name: name,
+          repository_owner: owner,
+        })
+      } catch (error) {
+        console.error('Failed to save selected repository:', error)
+      }
+    }
   }
 
   const toggleDirectory = (path: string) => {
