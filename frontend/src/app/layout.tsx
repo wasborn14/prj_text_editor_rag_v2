@@ -14,8 +14,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja">
-      <body>
+    <html lang="ja" suppressHydrationWarning>
+      {/* suppressHydrationWarningを使用してHydration警告を抑制 */}
+      <body suppressHydrationWarning>
         <QueryProvider>
           <AuthInitializer>{children}</AuthInitializer>
         </QueryProvider>
