@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { AuthInitializer } from '@/providers/AuthInitializer'
 
 export const metadata: Metadata = {
   title: 'Text Editor RAG',
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        <AuthInitializer>{children}</AuthInitializer>
+      </body>
     </html>
   )
 }
