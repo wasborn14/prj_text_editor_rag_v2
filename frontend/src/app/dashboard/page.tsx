@@ -9,9 +9,9 @@ import { useSelectedRepository } from '@/hooks/useSelectedRepository'
 import { GitHubTokenModal } from '@/components/features/settings'
 import {
   DashboardHeader,
-  FileTreePanel,
   RepositoryContentArea,
 } from '@/components/layout'
+import { FileTreePanelNew } from '@/components/layout/dashboard/FileTreePanelNew'
 import { Repository } from '@/lib/github'
 import { AlertCircle } from 'lucide-react'
 
@@ -142,13 +142,14 @@ export default function DashboardPage() {
         <main className="flex flex-1 overflow-hidden">
           <div className="mx-auto flex w-full max-w-7xl flex-1 gap-4 px-4 py-6 sm:px-6 lg:px-8">
             {/* File Tree Panel */}
-            <FileTreePanel
+            <FileTreePanelNew
               selectedRepo={selectedRepo}
               fileTree={fileTree}
               treeLoading={treeLoading}
               expandedDirs={expandedDirs}
               error={error}
               onToggleDirectory={toggleDirectory}
+              useDummyData={true}
             />
 
             {/* Content Area */}
