@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import '@/styles/FileTreePanelNew.css'
 import {
   DndContext,
   DragEndEvent,
@@ -11,6 +12,7 @@ import {
   useSensor,
   useSensors,
   DragOverEvent,
+  DragMoveEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -59,16 +61,38 @@ interface SortableItemProps {
 
 // ==================== Constants ====================
 
-const DUMMY_FILE_TREE: FileTreeItem[] = [
-  { path: 'test1/test1-1.txt', type: 'file', sha: '1', url: '' },
-  { path: 'test1/test1-2.txt', type: 'file', sha: '2', url: '' },
-  { path: 'test2/test2-1.txt', type: 'file', sha: '3', url: '' },
-  { path: 'test2/test2-2.txt', type: 'file', sha: '4', url: '' },
-  { path: 'test3/test3-1.txt', type: 'file', sha: '5', url: '' },
-  { path: 'test3/test3-2.txt', type: 'file', sha: '6', url: '' },
-  { path: 'root1.txt', type: 'file', sha: '7', url: '' },
-  { path: 'root2.txt', type: 'file', sha: '8', url: '' },
-]
+// スクロール用に大量のダミーデータを生成
+const generateDummyFiles = (): FileTreeItem[] => {
+  const files: FileTreeItem[] = []
+  let shaCounter = 1
+
+  // 10個のディレクトリを作成
+  for (let i = 1; i <= 10; i++) {
+    // 各ディレクトリに10個のファイルを追加
+    for (let j = 1; j <= 10; j++) {
+      files.push({
+        path: `dir${i}/file${i}-${j}.txt`,
+        type: 'file',
+        sha: String(shaCounter++),
+        url: '',
+      })
+    }
+  }
+
+  // ルートにもいくつかファイルを追加
+  for (let i = 1; i <= 5; i++) {
+    files.push({
+      path: `root${i}.txt`,
+      type: 'file',
+      sha: String(shaCounter++),
+      url: '',
+    })
+  }
+
+  return files
+}
+
+const DUMMY_FILE_TREE: FileTreeItem[] = generateDummyFiles()
 
 // ==================== Helper Functions ====================
 
@@ -320,13 +344,16 @@ export function FileTreePanelNew({
     useDummyData ? DUMMY_FILE_TREE : propFileTree
   )
   const [emptyDirectories, setEmptyDirectories] = useState<Set<string>>(
-    new Set(['test1', 'test2', 'test3'])
+    new Set(['dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'dir10'])
   )
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const [localExpandedDirs, setLocalExpandedDirs] = useState<Set<string>>(
-    new Set(['test1', 'test2', 'test3'])
+    new Set(['dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'dir10'])
   )
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -362,12 +389,72 @@ export function FileTreePanelNew({
     setOverId(event.over?.id as string | null)
   }, [])
 
+  // 自動スクロール用のヘルパー関数
+  const startAutoScroll = useCallback((speed: number) => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current)
+    }
+    scrollIntervalRef.current = setInterval(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop += speed
+      }
+    }, 16) // 60fps
+  }, [])
+
+  const stopAutoScroll = useCallback(() => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current)
+      scrollIntervalRef.current = null
+    }
+  }, [])
+
+  // ドラッグ中の自動スクロール処理
+  const handleDragMove = useCallback(
+    (event: DragMoveEvent) => {
+      const container = containerRef.current
+      if (!container) return
+
+      const rect = container.getBoundingClientRect()
+      const activatorEvent = event.activatorEvent as MouseEvent | TouchEvent
+
+      // マウスまたはタッチイベントからY座標を取得
+      const pointerY = 'clientY' in activatorEvent
+        ? activatorEvent.clientY
+        : activatorEvent.touches?.[0]?.clientY
+
+      if (!pointerY) return
+
+      const threshold = 50
+      const topDistance = pointerY - rect.top
+      const bottomDistance = rect.bottom - pointerY
+
+      if (topDistance < threshold && topDistance > 0) {
+        // 上スクロール（端に近いほど速く）
+        const speed = -Math.max(1, (threshold - topDistance) / 5)
+        startAutoScroll(speed)
+      } else if (bottomDistance < threshold && bottomDistance > 0) {
+        // 下スクロール（端に近いほど速く）
+        const speed = Math.max(1, (threshold - bottomDistance) / 5)
+        startAutoScroll(speed)
+      } else {
+        stopAutoScroll()
+      }
+    },
+    [startAutoScroll, stopAutoScroll]
+  )
+
+  // コンポーネントアンマウント時にスクロールを停止
+  useEffect(() => {
+    return () => stopAutoScroll()
+  }, [stopAutoScroll])
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event
 
       setActiveId(null)
       setOverId(null)
+      stopAutoScroll() // ドラッグ終了時にスクロールを停止
 
       if (!over || active.id === over.id) return
 
@@ -425,7 +512,7 @@ export function FileTreePanelNew({
         updateEmptyDirectories(prev, activeNode, newBasePath, sourceDir, updatedFileTree)
       )
     },
-    [flatTree, fileTree]
+    [flatTree, fileTree, stopAutoScroll]
   )
 
   const activeNode = useMemo(
@@ -439,7 +526,10 @@ export function FileTreePanelNew({
   )
 
   return (
-    <div className="w-80 flex-shrink-0 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div
+      ref={containerRef}
+      className="file-tree-container w-80 flex-shrink-0 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+    >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">ファイル一覧</h2>
         {useDummyData && (
@@ -463,6 +553,7 @@ export function FileTreePanelNew({
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
         <SortableContext

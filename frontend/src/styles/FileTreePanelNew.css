@@ -1,0 +1,9 @@
+/* FileTreePanelNew専用スタイル */
+.file-tree-container {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.file-tree-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
