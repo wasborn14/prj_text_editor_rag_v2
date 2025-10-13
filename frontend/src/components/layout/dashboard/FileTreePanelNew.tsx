@@ -392,6 +392,30 @@ export function FileTreePanelNew({
 
       const sourceDir = getParentDir(activeNode.fullPath)
 
+      // ディレクトリが開いていた場合、移動後も開いた状態を維持
+      if (activeNode.type === 'dir') {
+        setLocalExpandedDirs((prev) => {
+          const newExpanded = new Set(prev)
+
+          // 元のパスが開いていた場合、新しいパスで開く
+          if (newExpanded.has(activeNode.fullPath)) {
+            newExpanded.delete(activeNode.fullPath)
+            newExpanded.add(newBasePath)
+          }
+
+          // 子ディレクトリも更新
+          Array.from(newExpanded).forEach((expandedPath) => {
+            if (expandedPath.startsWith(activeNode.fullPath + '/')) {
+              newExpanded.delete(expandedPath)
+              const relativePath = expandedPath.substring(activeNode.fullPath.length)
+              newExpanded.add(newBasePath + relativePath)
+            }
+          })
+
+          return newExpanded
+        })
+      }
+
       // ファイルツリーを更新
       const updatedFileTree = moveItems(fileTree, activeNode, newBasePath)
       setFileTree(updatedFileTree)
