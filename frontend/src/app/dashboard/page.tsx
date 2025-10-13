@@ -2,6 +2,7 @@
 
 import { useAuthStore } from '@/stores/authStore'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
+import { GitHubTokenModal } from '@/components/features/settings'
 import { LogOut, User } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -12,7 +13,7 @@ function getUserDisplayName(user: SupabaseUser | null): string {
 
 export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
-  const { user, signOut } = useAuthStore()
+  const { user, signOut, needsTokenSetup, tokenSetupReason } = useAuthStore()
 
   const handleSignOut = async () => {
     await signOut()
@@ -27,9 +28,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="flex-shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <>
+      {/* GitHubトークン設定モーダル */}
+      <GitHubTokenModal isOpen={needsTokenSetup} reason={tokenSetupReason} />
+
+      <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900">
+        {/* Header */}
+        <header className="flex-shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
@@ -70,6 +75,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

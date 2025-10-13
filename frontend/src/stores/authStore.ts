@@ -4,11 +4,15 @@ import { create } from 'zustand'
 import { createClient } from '@/lib/supabase'
 import { User, Session } from '@supabase/supabase-js'
 
+type TokenSetupReason = 'missing' | 'expired' | 'invalid'
+
 interface AuthState {
   user: User | null
   session: Session | null
   loading: boolean
   githubToken: string | null
+  needsTokenSetup: boolean
+  tokenSetupReason: TokenSetupReason | null
 
   signInWithGitHub: () => Promise<void>
   signOut: () => Promise<void>
@@ -16,6 +20,8 @@ interface AuthState {
   fetchGithubToken: () => Promise<string | null>
   saveGithubToken: (token: string, expiresAt: string | null) => Promise<void>
   saveProfile: () => Promise<void>
+  setTokenSetupNeeded: (reason: TokenSetupReason) => void
+  clearTokenSetup: () => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -23,6 +29,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   loading: true,
   githubToken: null,
+  needsTokenSetup: false,
+  tokenSetupReason: null,
 
   signInWithGitHub: async () => {
     const supabase = createClient()
@@ -48,6 +56,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       session: null,
       githubToken: null,
+      needsTokenSetup: false,
+      tokenSetupReason: null,
       loading: false,
     })
 
@@ -70,28 +80,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     // データベースからGitHubトークンを取得
     let githubToken: string | null = null
+    let needsTokenSetup = false
+    let tokenSetupReason: TokenSetupReason | null = null
+
     if (session?.user) {
       githubToken = await get().fetchGithubToken()
+
+      // トークンがない場合は設定が必要
+      if (!githubToken) {
+        needsTokenSetup = true
+        tokenSetupReason = 'missing'
+      }
     }
 
     set({
       session,
       user: session?.user ?? null,
       githubToken,
+      needsTokenSetup,
+      tokenSetupReason,
       loading: false,
     })
 
     supabase.auth.onAuthStateChange(async (event, session) => {
       // データベースからGitHubトークンを取得
       let githubToken: string | null = null
+      let needsTokenSetup = false
+      let tokenSetupReason: TokenSetupReason | null = null
+
       if (session?.user) {
         githubToken = await get().fetchGithubToken()
+
+        // トークンがない場合は設定が必要
+        if (!githubToken) {
+          needsTokenSetup = true
+          tokenSetupReason = 'missing'
+        }
       }
 
       set({
         session,
         user: session?.user ?? null,
         githubToken,
+        needsTokenSetup,
+        tokenSetupReason,
       })
 
       // SIGNED_INイベント時にプロフィールを自動保存
@@ -128,14 +160,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save token')
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save token')
       }
 
-      set({ githubToken: token })
+      set({
+        githubToken: token,
+        needsTokenSetup: false,
+        tokenSetupReason: null,
+      })
     } catch (error) {
       console.error('Failed to save GitHub token:', error)
       throw error
     }
+  },
+
+  setTokenSetupNeeded: (reason: TokenSetupReason) => {
+    set({
+      needsTokenSetup: true,
+      tokenSetupReason: reason,
+      githubToken: null,
+    })
+  },
+
+  clearTokenSetup: () => {
+    set({
+      needsTokenSetup: false,
+      tokenSetupReason: null,
+    })
   },
 
   saveProfile: async () => {
