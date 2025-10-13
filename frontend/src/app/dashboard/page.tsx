@@ -1,22 +1,60 @@
 'use client'
 
+import React, { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
+import { useRepositories } from '@/hooks/useRepositories'
+import { useFileTree } from '@/hooks/useFileTree'
 import { GitHubTokenModal } from '@/components/features/settings'
-import { LogOut, User } from 'lucide-react'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
-
-function getUserDisplayName(user: SupabaseUser | null): string {
-  if (!user) return ''
-  return user.user_metadata?.user_name || user.email || ''
-}
+import {
+  DashboardHeader,
+  FileTreePanel,
+  RepositoryContentArea,
+} from '@/components/layout'
+import { Repository } from '@/lib/github'
+import { AlertCircle } from 'lucide-react'
 
 export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
-  const { user, signOut, needsTokenSetup, tokenSetupReason } = useAuthStore()
+  const { user, githubToken, signOut, needsTokenSetup, tokenSetupReason } =
+    useAuthStore()
+
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null)
+  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
+
+  // TanStack Queryを使用してデータ取得
+  const {
+    data: repositories = [],
+    isLoading: repoLoading,
+    error: repoError,
+  } = useRepositories(githubToken)
+
+  const {
+    data: fileTree = [],
+    isLoading: treeLoading,
+    error: treeError,
+  } = useFileTree(githubToken, selectedRepo)
+
+  const error = repoError?.message || treeError?.message || null
 
   const handleSignOut = async () => {
     await signOut()
+  }
+
+  const handleRepoChange = (repoFullName: string) => {
+    const repo = repositories.find((r) => r.full_name === repoFullName)
+    setSelectedRepo(repo || null)
+    setExpandedDirs(new Set())
+  }
+
+  const toggleDirectory = (path: string) => {
+    const newExpanded = new Set(expandedDirs)
+    if (newExpanded.has(path)) {
+      newExpanded.delete(path)
+    } else {
+      newExpanded.add(path)
+    }
+    setExpandedDirs(newExpanded)
   }
 
   if (loading || !isAuthenticated) {
@@ -34,47 +72,54 @@ export default function DashboardPage() {
 
       <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <header className="flex-shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <h1 className="text-lg font-bold text-gray-900 sm:text-xl dark:text-white">
-                Dashboard
-              </h1>
-              <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-2 py-1 sm:px-3 sm:py-1.5 dark:bg-gray-700">
-                <User className="h-3 w-3 text-gray-600 sm:h-4 sm:w-4 dark:text-gray-400" />
-                <span className="truncate text-xs text-gray-900 sm:text-sm dark:text-white">
-                  {getUserDisplayName(user)}
-                </span>
+        <DashboardHeader
+          user={user}
+          repositories={repositories}
+          selectedRepo={selectedRepo}
+          repoLoading={repoLoading}
+          onRepoChange={handleRepoChange}
+          onSignOut={handleSignOut}
+        />
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+            <div className="rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+              <div className="flex">
+                <AlertCircle className="h-5 w-5 text-red-400" />
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                    エラーが発生しました
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                    <p>{error}</p>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <button
-              onClick={handleSignOut}
-              className="flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-            >
-              <LogOut className="h-4 w-4" />
-              ログアウト
-            </button>
           </div>
-        </div>
-      </header>
+        )}
 
-      {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden">
-        <div className="mx-auto flex w-full max-w-7xl flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-          <div className="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
-                Welcome to Dashboard
-              </h2>
-              <p className="mt-2 text-sm text-gray-600 sm:text-base dark:text-gray-400">
-                ログイン成功！ダッシュボード機能を実装していきます。
-              </p>
-            </div>
+        {/* Main Content */}
+        <main className="flex flex-1 overflow-hidden">
+          <div className="mx-auto flex w-full max-w-7xl flex-1 gap-4 px-4 py-6 sm:px-6 lg:px-8">
+            {/* File Tree Panel */}
+            <FileTreePanel
+              selectedRepo={selectedRepo}
+              fileTree={fileTree}
+              treeLoading={treeLoading}
+              expandedDirs={expandedDirs}
+              error={error}
+              onToggleDirectory={toggleDirectory}
+            />
+
+            {/* Content Area */}
+            <RepositoryContentArea
+              selectedRepo={selectedRepo}
+              fileCount={fileTree.length}
+            />
           </div>
-        </div>
-      </main>
+        </main>
       </div>
     </>
   )
