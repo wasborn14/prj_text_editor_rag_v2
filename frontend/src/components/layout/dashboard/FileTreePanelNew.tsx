@@ -349,11 +349,13 @@ export function FileTreePanelNew({
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const [localExpandedDirs, setLocalExpandedDirs] = useState<Set<string>>(
-    new Set(['dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'dir10'])
+    new Set([]) // 初期状態は全て閉じる
   )
 
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const lastHoveredDirRef = useRef<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -386,8 +388,50 @@ export function FileTreePanelNew({
   }, [])
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
-    setOverId(event.over?.id as string | null)
-  }, [])
+    const overId = event.over?.id as string | null
+    setOverId(overId)
+
+    // ホバー中のディレクトリ自動展開
+    if (overId && activeId) {
+      const overNode = flatTree.find((n) => n.fullPath === overId)
+
+      if (overNode?.type === 'dir' && !localExpandedDirs.has(overId)) {
+        // 同じディレクトリの場合はタイマーを再設定しない
+        if (lastHoveredDirRef.current !== overId) {
+          // 既存のタイマーをクリア
+          if (hoverTimerRef.current) {
+            clearTimeout(hoverTimerRef.current)
+          }
+
+          lastHoveredDirRef.current = overId
+
+          // 0.2秒後に展開
+          hoverTimerRef.current = setTimeout(() => {
+            setLocalExpandedDirs((prev) => {
+              const newSet = new Set(prev)
+              newSet.add(overId)
+              return newSet
+            })
+            hoverTimerRef.current = null
+          }, 200)
+        }
+      } else {
+        // ディレクトリ以外または既に展開済みの場合
+        if (hoverTimerRef.current) {
+          clearTimeout(hoverTimerRef.current)
+          hoverTimerRef.current = null
+        }
+        lastHoveredDirRef.current = null
+      }
+    } else {
+      // overがない場合
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current)
+        hoverTimerRef.current = null
+      }
+      lastHoveredDirRef.current = null
+    }
+  }, [flatTree, localExpandedDirs, activeId])
 
   // 自動スクロール用のヘルパー関数
   const startAutoScroll = useCallback((speed: number) => {
@@ -448,6 +492,15 @@ export function FileTreePanelNew({
     return () => stopAutoScroll()
   }, [stopAutoScroll])
 
+  // コンポーネントアンマウント時にホバータイマーもクリア
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current)
+      }
+    }
+  }, [])
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event
@@ -455,6 +508,13 @@ export function FileTreePanelNew({
       setActiveId(null)
       setOverId(null)
       stopAutoScroll() // ドラッグ終了時にスクロールを停止
+
+      // ホバータイマーもクリア
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current)
+        hoverTimerRef.current = null
+      }
+      lastHoveredDirRef.current = null
 
       if (!over || active.id === over.id) return
 
