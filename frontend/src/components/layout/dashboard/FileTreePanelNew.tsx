@@ -313,9 +313,7 @@ export function FileTreePanelNew({
   selectedRepo,
   fileTree: propFileTree,
   treeLoading,
-  expandedDirs,
   error,
-  onToggleDirectory,
   useDummyData = true,
 }: FileTreePanelNewProps) {
   const [fileTree, setFileTree] = useState<FileTreeItem[]>(
