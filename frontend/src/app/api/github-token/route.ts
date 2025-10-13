@@ -32,7 +32,7 @@ export async function GET() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
   }
 
   try {
@@ -60,7 +60,7 @@ export async function GET() {
   } catch (error) {
     console.error('Failed to fetch GitHub token:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch GitHub token' },
+      { error: 'GitHubトークンの取得に失敗しました' },
       { status: 500 }
     )
   }
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
   }
 
   try {
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 
     if (!token || typeof token !== 'string') {
       return NextResponse.json(
-        { error: 'Token is required' },
+        { error: 'トークンが必要です' },
         { status: 400 }
       )
     }
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
     if (!githubResponse.ok) {
       return NextResponse.json(
-        { error: 'Invalid GitHub token' },
+        { error: '無効なGitHubトークンです' },
         { status: 400 }
       )
     }
@@ -125,12 +125,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'GitHub token saved successfully',
+      message: 'GitHubトークンを保存しました',
     })
   } catch (error) {
     console.error('Failed to save GitHub token:', error)
     return NextResponse.json(
-      { error: 'Failed to save GitHub token' },
+      { error: 'GitHubトークンの保存に失敗しました' },
       { status: 500 }
     )
   }
