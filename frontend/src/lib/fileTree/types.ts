@@ -61,4 +61,5 @@ export interface SelectionHandlers {
   lastSelectedPath: string | null
   handleItemClick: (path: string, event: React.MouseEvent) => void
   clearSelection: () => void
+  setSelectedPaths: (updater: (prev: Set<string>) => Set<string>) => void
 }

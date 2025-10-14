@@ -57,5 +57,6 @@ export function useFileTreeSelection(flatTree: TreeNode[]): SelectionHandlers {
     lastSelectedPath,
     handleItemClick,
     clearSelection,
+    setSelectedPaths,
   }
 }

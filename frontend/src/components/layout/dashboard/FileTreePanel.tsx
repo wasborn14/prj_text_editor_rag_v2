@@ -69,10 +69,7 @@ export function FileTreePanel({
     setFileTree,
     setEmptyDirectories,
     setLocalExpandedDirs,
-    setSelectedPaths: () => {
-      // Note: setSelectedPathsはselection内部で管理されているため直接更新不可
-      // この問題は後で修正が必要
-    },
+    setSelectedPaths: selection.setSelectedPaths,
   })
 
   // activeNodeの取得
