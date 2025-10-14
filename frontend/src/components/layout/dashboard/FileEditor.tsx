@@ -71,7 +71,8 @@ export function FileEditor() {
         <EditorContent
           extensions={[StarterKit]}
           initialContent={DUMMY_CONTENT}
-          className="min-h-full p-8 max-w-4xl mx-auto"
+          className="min-h-full p-4 md:p-8 max-w-none md:max-w-4xl md:mx-auto"
+          immediatelyRender={false}
         />
       </EditorRoot>
     </div>

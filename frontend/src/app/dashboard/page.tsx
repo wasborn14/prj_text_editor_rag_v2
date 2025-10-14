@@ -7,13 +7,11 @@ import { useRepositories } from '@/hooks/useRepositories'
 import { useFileTree } from '@/hooks/fileTree'
 import { useSelectedRepository } from '@/hooks/useSelectedRepository'
 import { GitHubTokenModal } from '@/components/features/settings'
-import {
-  DashboardHeader,
-} from '@/components/layout'
+import { DashboardHeader } from '@/components/layout/dashboard/DashboardHeader'
 import { FileTreePanel } from '@/components/layout/dashboard/FileTreePanel'
+import { FileEditor } from '@/components/layout/dashboard/FileEditor'
 import { Repository } from '@/lib/github'
 import { AlertCircle } from 'lucide-react'
-import { FileEditor } from '@/components/layout/dashboard/FileEditor'
 
 export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
@@ -99,10 +97,6 @@ export default function DashboardPage() {
         {/* Header */}
         <DashboardHeader
           user={user}
-          repositories={repositories}
-          selectedRepo={selectedRepo}
-          repoLoading={repoLoading}
-          onRepoChange={handleRepoChange}
           onSignOut={handleSignOut}
         />
 
@@ -127,15 +121,18 @@ export default function DashboardPage() {
 
         {/* Main Content */}
         <main className="flex flex-1 overflow-hidden">
-          <div className="mx-auto flex w-full max-w-7xl flex-1 gap-4 px-4 py-6 sm:px-6 lg:px-8">
-            {/* File Tree Panel */}
-            <FileTreePanel
-              selectedRepo={selectedRepo}
-              treeLoading={treeLoading}
-              error={error}
-            />
+          {/* File Tree Panel (Sidebar) */}
+          <FileTreePanel
+            repositories={repositories}
+            selectedRepo={selectedRepo}
+            repoLoading={repoLoading}
+            treeLoading={treeLoading}
+            error={error}
+            onRepoChange={handleRepoChange}
+          />
 
-            {/* Content Area */}
+          {/* Editor Area */}
+          <div className="flex flex-1 overflow-hidden">
             <FileEditor />
           </div>
         </main>
