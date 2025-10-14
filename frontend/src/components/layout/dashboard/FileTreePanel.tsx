@@ -109,7 +109,14 @@ export function FileTreePanel({
   }
 
   return (
-    <>
+    <DndContext
+      sensors={dragDrop.sensors}
+      collisionDetection={closestCenter}
+      onDragStart={dragDrop.handleDragStart}
+      onDragOver={dragDrop.handleDragOver}
+      onDragMove={dragDrop.handleDragMove}
+      onDragEnd={dragDrop.handleDragEnd}
+    >
       {/* オーバーレイ（モバイルのみ、ヘッダー下から表示） */}
       {isOpen && (
         <div
@@ -180,44 +187,31 @@ export function FileTreePanel({
           </div>
         )}
 
-        <DndContext
-          sensors={dragDrop.sensors}
-          collisionDetection={closestCenter}
-          onDragStart={dragDrop.handleDragStart}
-          onDragOver={dragDrop.handleDragOver}
-          onDragMove={dragDrop.handleDragMove}
-          onDragEnd={dragDrop.handleDragEnd}
+        <SortableContext
+          items={flatTree.map((node) => node.fullPath)}
+          strategy={verticalListSortingStrategy}
         >
-          <SortableContext
-            items={flatTree.map((node) => node.fullPath)}
-            strategy={verticalListSortingStrategy}
-          >
-            {selectedRepo && !treeLoading && localFileTree.length > 0 && (
-              <div className="space-y-0.5">
-                {flatTree.map((node) => (
-                  <FileTreeItem
-                    key={node.fullPath}
-                    node={node}
-                    isExpanded={expandedDirs.has(node.fullPath)}
-                    isSelected={selection.selectedPaths.has(node.fullPath)}
-                    onToggle={() => toggleDirectory(node.fullPath)}
-                    onItemClick={(e) => handleItemClick(node.fullPath, e)}
-                    isDragOver={dragDrop.overId === node.fullPath}
-                    isInDragOverDirectory={isNodeInDragOverDirectory(
-                      node,
-                      dragDrop.overId,
-                      overNode
-                    )}
-                  />
-                ))}
-              </div>
-            )}
-          </SortableContext>
-
-          <DragOverlay>
-            {activeNode && <DragOverlayItem node={activeNode} />}
-          </DragOverlay>
-        </DndContext>
+          {selectedRepo && !treeLoading && localFileTree.length > 0 && (
+            <div className="space-y-0.5">
+              {flatTree.map((node) => (
+                <FileTreeItem
+                  key={node.fullPath}
+                  node={node}
+                  isExpanded={expandedDirs.has(node.fullPath)}
+                  isSelected={selection.selectedPaths.has(node.fullPath)}
+                  onToggle={() => toggleDirectory(node.fullPath)}
+                  onItemClick={(e) => handleItemClick(node.fullPath, e)}
+                  isDragOver={dragDrop.overId === node.fullPath}
+                  isInDragOverDirectory={isNodeInDragOverDirectory(
+                    node,
+                    dragDrop.overId,
+                    overNode
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </SortableContext>
 
         {selectedRepo && !treeLoading && localFileTree.length === 0 && !error && (
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -225,6 +219,11 @@ export function FileTreePanel({
           </p>
         )}
       </div>
-    </>
+
+      {/* DragOverlay をサイドバーの外に配置 */}
+      <DragOverlay>
+        {activeNode && <DragOverlayItem node={activeNode} />}
+      </DragOverlay>
+    </DndContext>
   )
 }
