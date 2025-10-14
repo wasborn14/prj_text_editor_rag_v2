@@ -64,11 +64,10 @@ export function useFileTreeDragDrop({
         distance: 8,
       },
     }),
-    // タッチ用: ロングプレス（500ms）でドラッグ開始
+    // タッチ用: 即座にドラッグ開始（delayなし）
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 500,
-        tolerance: 5,
+        distance: 8,
       },
     })
   )
