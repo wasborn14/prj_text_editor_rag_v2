@@ -9,11 +9,11 @@ import { useSelectedRepository } from '@/hooks/useSelectedRepository'
 import { GitHubTokenModal } from '@/components/features/settings'
 import {
   DashboardHeader,
-  RepositoryContentArea,
 } from '@/components/layout'
 import { FileTreePanel } from '@/components/layout/dashboard/FileTreePanel'
 import { Repository } from '@/lib/github'
 import { AlertCircle } from 'lucide-react'
+import { FileEditor } from '@/components/layout/dashboard/FileEditor'
 
 export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
@@ -136,10 +136,7 @@ export default function DashboardPage() {
             />
 
             {/* Content Area */}
-            <RepositoryContentArea
-              selectedRepo={selectedRepo}
-              fileCount={fileTree.length}
-            />
+            <FileEditor />
           </div>
         </main>
       </div>
