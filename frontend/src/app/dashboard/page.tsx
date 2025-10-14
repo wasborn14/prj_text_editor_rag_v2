@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useRepositories } from '@/hooks/useRepositories'
-import { useFileTree } from '@/hooks/useFileTree'
+import { useFileTree } from '@/hooks/fileTree'
 import { useSelectedRepository } from '@/hooks/useSelectedRepository'
 import { GitHubTokenModal } from '@/components/features/settings'
 import {
