@@ -144,9 +144,6 @@ export function FileTreePanel({
       >
         {/* リポジトリセレクト */}
         <div className="mb-4">
-          <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-            リポジトリ
-          </label>
           {!repoLoading && repositories.length > 0 ? (
             <select
               value={selectedRepo?.full_name || ''}
@@ -166,12 +163,6 @@ export function FileTreePanel({
               読み込み中...
             </div>
           )}
-        </div>
-
-        <div className="mb-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-            ファイル一覧
-          </h2>
         </div>
 
         {!selectedRepo && (

@@ -41,7 +41,7 @@ export function FileTreeItem({
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`group flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
+        className={`group flex items-center gap-1.5 px-2 py-1.5 text-[15px] transition-colors ${
           isRootNode ? 'cursor-default' : 'cursor-pointer'
         } ${
           isSelected
@@ -64,30 +64,30 @@ export function FileTreeItem({
             className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
             type="button"
           >
-            <GripVertical className="h-4 w-4 text-gray-400" />
+            <GripVertical className="h-[18px] w-[18px] text-gray-400" />
           </button>
         )}
 
         {isDir && !isRootNode ? (
           <button onClick={onToggle} className="flex-shrink-0" type="button">
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-gray-500" />
+              <ChevronDown className="h-[18px] w-[18px] text-gray-500" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-gray-500" />
+              <ChevronRight className="h-[18px] w-[18px] text-gray-500" />
             )}
           </button>
         ) : !isDir ? (
-          <span className="w-4" />
+          <span className="w-[18px]" />
         ) : null}
 
         {isDir ? (
           isExpanded ? (
-            <FolderOpen className="h-4 w-4 text-blue-500" />
+            <FolderOpen className="h-[18px] w-[18px] text-blue-500" />
           ) : (
-            <Folder className="h-4 w-4 text-blue-500" />
+            <Folder className="h-[18px] w-[18px] text-blue-500" />
           )
         ) : (
-          <File className="h-4 w-4 text-gray-400" />
+          <File className="h-[18px] w-[18px] text-gray-400" />
         )}
 
         <span className="truncate text-gray-900 dark:text-gray-100">{node.name}</span>
