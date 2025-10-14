@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
+import { useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core'
 import type { DragStartEvent, DragOverEvent, DragEndEvent, DragMoveEvent } from '@dnd-kit/core'
 import { useQueryClient } from '@tanstack/react-query'
 import { FileTreeItem, Repository, GitHubClient } from '@/lib/github'
@@ -58,9 +58,17 @@ export function useFileTreeDragDrop({
   const lastHoveredDirRef = useRef<string | null>(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    // マウス用: 8px移動でドラッグ開始（即座）
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    // タッチ用: ロングプレス（500ms）でドラッグ開始
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 500,
+        tolerance: 5,
       },
     })
   )

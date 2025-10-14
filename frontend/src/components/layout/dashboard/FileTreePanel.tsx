@@ -98,14 +98,10 @@ export function FileTreePanel({
     [flatTree, dragDrop.overId]
   )
 
-  // モバイルでファイル選択時にサイドバーを閉じる
+  // ファイル/ディレクトリ選択時の処理
   const handleItemClick = (fullPath: string, e: React.MouseEvent) => {
     selection.handleItemClick(fullPath, e)
-
-    // モバイルの場合のみ閉じる
-    if (window.innerWidth < 768) {
-      close()
-    }
+    // モバイルでもサイドバーは閉じない
   }
 
   return (
