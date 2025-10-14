@@ -66,7 +66,7 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
         </div>
       ) : (
         <div className="flex items-center justify-center h-full text-gray-400">
-          ドキュメントがありません。
+          ドキュメントを選択してください。
         </div>
       )}
     </div>
