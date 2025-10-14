@@ -49,7 +49,6 @@ export default function DashboardPage() {
   }, [manualSelectedRepo, selectedRepository, repositories])
 
   const {
-    data: fileTree = [],
     isLoading: treeLoading,
     error: treeError,
   } = useFileTree(githubToken, selectedRepo)
