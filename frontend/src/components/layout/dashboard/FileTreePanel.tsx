@@ -54,7 +54,9 @@ interface TreeNode {
 interface SortableItemProps {
   node: TreeNode
   isExpanded: boolean
+  isSelected: boolean
   onToggle: () => void
+  onItemClick: (event: React.MouseEvent) => void
   isDragOver?: boolean
   isInDragOverDirectory?: boolean
 }
@@ -229,49 +231,14 @@ function hasDirectoriesInPath(emptyDirs: Set<string>, parentPath: string): boole
   return Array.from(emptyDirs).some((dir) => dir.startsWith(parentPath + '/'))
 }
 
-function updateEmptyDirectories(
-  prev: Set<string>,
-  activeNode: TreeNode,
-  newBasePath: string,
-  sourceDir: string | null,
-  updatedFileTree: FileTreeItem[]
-): Set<string> {
-  const newEmptyDirs = new Set(prev)
-
-  // ディレクトリ移動の処理
-  if (activeNode.type === 'dir') {
-    newEmptyDirs.delete(activeNode.fullPath)
-
-    if (!hasItemsInDirectory(updatedFileTree, newBasePath)) {
-      newEmptyDirs.add(newBasePath)
-    }
-  }
-
-  // 元のディレクトリが空になったかチェック
-  if (sourceDir) {
-    const hasItems = hasItemsInDirectory(updatedFileTree, sourceDir)
-    const hasDirs = hasDirectoriesInPath(newEmptyDirs, sourceDir)
-
-    if (!hasItems && !hasDirs) {
-      newEmptyDirs.add(sourceDir)
-    }
-  }
-
-  // 移動先のディレクトリは空ではない
-  const targetDir = getParentDir(newBasePath)
-  if (targetDir) {
-    newEmptyDirs.delete(targetDir)
-  }
-
-  return newEmptyDirs
-}
-
 // ==================== Components ====================
 
 function SortableItem({
   node,
   isExpanded,
+  isSelected,
   onToggle,
+  onItemClick,
   isDragOver,
   isInDragOverDirectory
 }: SortableItemProps) {
@@ -290,14 +257,17 @@ function SortableItem({
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`group flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
-          isDragOver && isDir
+        className={`group flex items-center gap-1 px-2 py-1 text-sm transition-colors cursor-pointer ${
+          isSelected
+            ? 'bg-blue-100 dark:bg-blue-900/50'
+            : isDragOver && isDir
             ? 'bg-blue-500/20 dark:bg-blue-500/30 rounded'
             : isInDragOverDirectory
             ? 'bg-blue-500/10 dark:bg-blue-500/20'
             : 'hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
         }`}
         style={{ paddingLeft: `${node.level * 16 + 8}px` }}
+        onClick={onItemClick}
       >
         <button
           {...attributes}
@@ -353,6 +323,8 @@ export function FileTreePanel({
   )
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
+  const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null)
   const [localExpandedDirs, setLocalExpandedDirs] = useState<Set<string>>(
     new Set([]) // 初期状態は全て閉じる
   )
@@ -401,9 +373,47 @@ export function FileTreePanel({
     })
   }, [])
 
+  const handleItemClick = useCallback((path: string, event: React.MouseEvent) => {
+    event.stopPropagation()
+
+    if (event.ctrlKey || event.metaKey) {
+      // Ctrl/Cmd+クリック: トグル選択
+      setSelectedPaths((prev) => {
+        const newSelected = new Set(prev)
+        if (newSelected.has(path)) {
+          newSelected.delete(path)
+        } else {
+          newSelected.add(path)
+        }
+        return newSelected
+      })
+      setLastSelectedPath(path)
+    } else if (event.shiftKey && lastSelectedPath) {
+      // Shift+クリック: 範囲選択
+      const startIndex = flatTree.findIndex((n) => n.fullPath === lastSelectedPath)
+      const endIndex = flatTree.findIndex((n) => n.fullPath === path)
+
+      if (startIndex !== -1 && endIndex !== -1) {
+        const [start, end] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex]
+        const rangeItems = flatTree.slice(start, end + 1).map((n) => n.fullPath)
+        setSelectedPaths(new Set(rangeItems))
+      }
+    } else {
+      // 通常クリック: 単一選択
+      setSelectedPaths(new Set([path]))
+      setLastSelectedPath(path)
+    }
+  }, [lastSelectedPath, flatTree])
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveId(event.active.id as string)
-  }, [])
+    const draggedPath = event.active.id as string
+    setActiveId(draggedPath)
+
+    // ドラッグされたアイテムが選択に含まれていない場合、そのアイテムだけを選択
+    if (!selectedPaths.has(draggedPath)) {
+      setSelectedPaths(new Set([draggedPath]))
+    }
+  }, [selectedPaths])
 
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
@@ -515,61 +525,119 @@ export function FileTreePanel({
 
       if (!over || active.id === over.id) return
 
-      const activeNode = flatTree.find((node) => node.fullPath === active.id)
       const overNode = flatTree.find((node) => node.fullPath === over.id)
+      if (!overNode) return
 
-      if (!activeNode || !overNode) return
+      // 移動対象のアイテムを取得（選択されているアイテム全て）
+      const itemsToMove = Array.from(selectedPaths)
+        .map((path) => flatTree.find((node) => node.fullPath === path))
+        .filter((node): node is TreeNode => node !== undefined)
+
+      if (itemsToMove.length === 0) return
+
+      // 移動先のディレクトリを決定
+      const targetDir = overNode.type === 'dir'
+        ? overNode.fullPath
+        : getParentDir(overNode.fullPath)
 
       // 自分自身の子孫への移動を防ぐ
-      if (activeNode.type === 'dir' && overNode.fullPath.startsWith(activeNode.fullPath + '/')) {
-        return
+      for (const item of itemsToMove) {
+        if (item.type === 'dir' && targetDir?.startsWith(item.fullPath + '/')) {
+          console.log('Cannot move directory into its own subdirectory')
+          return
+        }
       }
 
-      // 移動先のパスを計算
-      const activeName = activeNode.name
-      const newBasePath = overNode.type === 'dir'
-        ? `${overNode.fullPath}/${activeName}`
-        : (() => {
-            const overDir = getParentDir(overNode.fullPath)
-            return overDir ? `${overDir}/${activeName}` : activeName
-          })()
+      // 各アイテムを移動
+      let updatedFileTree = fileTree
+      const movedPaths = new Map<string, string>() // 元のパス -> 新しいパス
 
-      const sourceDir = getParentDir(activeNode.fullPath)
+      // すべてのアイテムを移動
+      itemsToMove.forEach((item) => {
+        const newBasePath = targetDir ? `${targetDir}/${item.name}` : item.name
+        movedPaths.set(item.fullPath, newBasePath)
+        updatedFileTree = moveItems(updatedFileTree, item, newBasePath)
+      })
 
-      // ディレクトリが開いていた場合、移動後も開いた状態を維持
-      if (activeNode.type === 'dir') {
-        setLocalExpandedDirs((prev) => {
-          const newExpanded = new Set(prev)
-
-          // 元のパスが開いていた場合、新しいパスで開く
-          if (newExpanded.has(activeNode.fullPath)) {
-            newExpanded.delete(activeNode.fullPath)
-            newExpanded.add(newBasePath)
-          }
-
-          // 子ディレクトリも更新
-          Array.from(newExpanded).forEach((expandedPath) => {
-            if (expandedPath.startsWith(activeNode.fullPath + '/')) {
-              newExpanded.delete(expandedPath)
-              const relativePath = expandedPath.substring(activeNode.fullPath.length)
-              newExpanded.add(newBasePath + relativePath)
-            }
-          })
-
-          return newExpanded
-        })
-      }
-
-      // ファイルツリーを更新
-      const updatedFileTree = moveItems(fileTree, activeNode, newBasePath)
       setFileTree(updatedFileTree)
 
+      // 展開状態を更新（移動したディレクトリとその子孫）
+      setLocalExpandedDirs((prev) => {
+        const newExpanded = new Set(prev)
+
+        itemsToMove.forEach((item) => {
+          if (item.type === 'dir') {
+            const newBasePath = movedPaths.get(item.fullPath)!
+
+            // 元のパスが開いていた場合、新しいパスで開く
+            if (newExpanded.has(item.fullPath)) {
+              newExpanded.delete(item.fullPath)
+              newExpanded.add(newBasePath)
+            }
+
+            // 子ディレクトリも更新
+            Array.from(newExpanded).forEach((expandedPath) => {
+              if (expandedPath.startsWith(item.fullPath + '/')) {
+                newExpanded.delete(expandedPath)
+                const relativePath = expandedPath.substring(item.fullPath.length)
+                newExpanded.add(newBasePath + relativePath)
+              }
+            })
+          }
+        })
+
+        return newExpanded
+      })
+
       // 空のディレクトリ情報を更新
-      setEmptyDirectories((prev) =>
-        updateEmptyDirectories(prev, activeNode, newBasePath, sourceDir, updatedFileTree)
-      )
+      setEmptyDirectories((prev) => {
+        const newEmptyDirs = new Set(prev)
+
+        itemsToMove.forEach((item) => {
+          const newBasePath = movedPaths.get(item.fullPath)!
+          const sourceDir = getParentDir(item.fullPath)
+
+          // ディレクトリ移動の処理
+          if (item.type === 'dir') {
+            newEmptyDirs.delete(item.fullPath)
+
+            if (!hasItemsInDirectory(updatedFileTree, newBasePath)) {
+              newEmptyDirs.add(newBasePath)
+            }
+          }
+
+          // 元のディレクトリが空になったかチェック
+          if (sourceDir) {
+            const hasItems = hasItemsInDirectory(updatedFileTree, sourceDir)
+            const hasDirs = hasDirectoriesInPath(newEmptyDirs, sourceDir)
+
+            if (!hasItems && !hasDirs) {
+              newEmptyDirs.add(sourceDir)
+            }
+          }
+
+          // 移動先のディレクトリは空ではない
+          if (targetDir) {
+            newEmptyDirs.delete(targetDir)
+          }
+        })
+
+        return newEmptyDirs
+      })
+
+      // 選択状態を新しいパスに更新
+      setSelectedPaths((prev) => {
+        const newSelected = new Set<string>()
+        Array.from(prev).forEach((oldPath) => {
+          const newPath = movedPaths.get(oldPath)
+          if (newPath) {
+            newSelected.add(newPath)
+          }
+        })
+        return newSelected
+      })
     },
-    [flatTree, fileTree, clearAllTimers]
+    [flatTree, fileTree, selectedPaths, clearAllTimers]
   )
 
   const activeNode = useMemo(
@@ -630,7 +698,9 @@ export function FileTreePanel({
                     key={node.fullPath}
                     node={node}
                     isExpanded={localExpandedDirs.has(node.fullPath)}
+                    isSelected={selectedPaths.has(node.fullPath)}
                     onToggle={() => handleToggle(node.fullPath)}
+                    onItemClick={(e) => handleItemClick(node.fullPath, e)}
                     isDragOver={overId === node.fullPath}
                     isInDragOverDirectory={isInDragOverDir}
                   />
