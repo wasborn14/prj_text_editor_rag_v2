@@ -37,8 +37,12 @@ export function FileTreePanel({
 
   // ツリー構造を構築
   const tree = useMemo(
-    () => buildTreeStructure(localFileTree, emptyDirectories),
-    [localFileTree, emptyDirectories]
+    () => buildTreeStructure(
+      localFileTree,
+      emptyDirectories,
+      selectedRepo?.name
+    ),
+    [localFileTree, emptyDirectories, selectedRepo?.name]
   )
   const flatTree = useMemo(
     () => flattenTree(tree, expandedDirs),

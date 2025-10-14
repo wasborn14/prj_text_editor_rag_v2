@@ -31,10 +31,16 @@ export function useFileTree(
     }
   }, [query.data, setLocalFileTree])
 
-  // リポジトリ変更時にストアをリセット
+  // リポジトリ変更時にストアをリセットし、ルートノードを展開
   useEffect(() => {
     resetFileTree()
-  }, [repository?.full_name, resetFileTree])
+    // ルートノード（空文字列）を展開状態にする
+    if (repository) {
+      useFileTreeStore.setState((state) => ({
+        expandedDirs: new Set([''])
+      }))
+    }
+  }, [repository?.full_name, resetFileTree, repository])
 
   return query
 }

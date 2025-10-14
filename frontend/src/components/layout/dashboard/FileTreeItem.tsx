@@ -36,32 +36,39 @@ export function FileTreeItem({
   }
 
   const isDir = node.type === 'dir'
+  const isRootNode = node.level === -1
 
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`group flex items-center gap-1 px-2 py-1 text-sm transition-colors cursor-pointer ${
+        className={`group flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
+          isRootNode ? 'cursor-default' : 'cursor-pointer'
+        } ${
           isSelected
             ? 'bg-blue-100 dark:bg-blue-900/50'
             : isDragOver && isDir
             ? 'bg-blue-500/20 dark:bg-blue-500/30 rounded'
             : isInDragOverDirectory
             ? 'bg-blue-500/10 dark:bg-blue-500/20'
+            : isRootNode
+            ? ''
             : 'hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
         }`}
-        style={{ paddingLeft: `${node.level * 16 + 8}px` }}
-        onClick={onItemClick}
+        style={{ paddingLeft: isRootNode ? '8px' : `${node.level * 16 + 8}px` }}
+        onClick={isRootNode ? undefined : onItemClick}
       >
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-          type="button"
-        >
-          <GripVertical className="h-4 w-4 text-gray-400" />
-        </button>
+        {!isRootNode && (
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+            type="button"
+          >
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </button>
+        )}
 
-        {isDir ? (
+        {isDir && !isRootNode ? (
           <button onClick={onToggle} className="flex-shrink-0" type="button">
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -69,9 +76,9 @@ export function FileTreeItem({
               <ChevronRight className="h-4 w-4 text-gray-500" />
             )}
           </button>
-        ) : (
+        ) : !isDir ? (
           <span className="w-4" />
-        )}
+        ) : null}
 
         {isDir ? (
           isExpanded ? (

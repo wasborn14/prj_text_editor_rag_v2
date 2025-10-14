@@ -26,9 +26,11 @@ export function moveItems(
 
 /**
  * パスから親ディレクトリを取得
+ * @returns 親ディレクトリのパス。ルートの場合は空文字列、パスが空の場合はnull
  */
 export function getParentDir(path: string): string | null {
-  return path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : null
+  if (!path) return null
+  return path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : ''
 }
 
 /**

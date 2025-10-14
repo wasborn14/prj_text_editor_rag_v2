@@ -58,10 +58,14 @@ export function addNodeToTree(
 
 /**
  * ファイルツリーから階層構造を構築
+ * @param fileTree ファイルツリー
+ * @param emptyDirs 空のディレクトリ
+ * @param rootNodeName ルートノードの表示名（省略時はルートノードを作成しない）
  */
 export function buildTreeStructure(
   fileTree: FileTreeItem[],
-  emptyDirs: Set<string>
+  emptyDirs: Set<string>,
+  rootNodeName?: string
 ): TreeNode[] {
   const root: TreeNode[] = []
   const map = new Map<string, TreeNode>()
@@ -94,7 +98,21 @@ export function buildTreeStructure(
     }
   })
 
-  return sortNodes(root)
+  const sortedRoot = sortNodes(root)
+
+  // ルートノード名が指定されている場合、仮想ルートノードでラップ
+  if (rootNodeName) {
+    const virtualRoot: TreeNode = {
+      name: rootNodeName,
+      fullPath: '',
+      type: 'dir',
+      level: -1,
+      children: sortedRoot,
+    }
+    return [virtualRoot]
+  }
+
+  return sortedRoot
 }
 
 /**
