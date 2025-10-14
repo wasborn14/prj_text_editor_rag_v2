@@ -13,6 +13,7 @@ import {
 } from '@/lib/fileTree'
 import { useFileTreeSelection, useFileTreeDragDrop } from '@/hooks/fileTree'
 import { useFileTreeStore } from '@/stores/fileTreeStore'
+import { useAuthStore } from '@/stores/authStore'
 import { FileTreeItem } from './FileTreeItem'
 import { DragOverlayItem } from './DragOverlayItem'
 
@@ -34,6 +35,9 @@ export function FileTreePanel({
     toggleDirectory,
     setExpandedDirs,
   } = useFileTreeStore()
+
+  // GitHubトークンを取得
+  const githubToken = useAuthStore((state) => state.githubToken)
 
   // ツリー構造を構築
   const tree = useMemo(
@@ -59,6 +63,8 @@ export function FileTreePanel({
     selectedPaths: selection.selectedPaths,
     emptyDirectories,
     localExpandedDirs: expandedDirs,
+    repository: selectedRepo,
+    githubToken,
     setFileTree: setLocalFileTree,
     setEmptyDirectories,
     setLocalExpandedDirs: setExpandedDirs,

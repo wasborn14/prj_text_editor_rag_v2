@@ -85,6 +85,9 @@ export class GitHubClient {
       const { data: repoData } = await this.octokit.repos.get({
         owner,
         repo,
+        headers: {
+          'If-None-Match': '',
+        },
       })
       const defaultBranch = branch || repoData.default_branch
 
@@ -93,6 +96,9 @@ export class GitHubClient {
         owner,
         repo,
         branch: defaultBranch,
+        headers: {
+          'If-None-Match': '',
+        },
       })
 
       // コミットSHAからツリーを再帰的に取得
@@ -101,6 +107,9 @@ export class GitHubClient {
         repo,
         tree_sha: branchData.commit.commit.tree.sha,
         recursive: 'true',
+        headers: {
+          'If-None-Match': '',
+        },
       })
 
       const files = (data.tree || [])
@@ -158,6 +167,111 @@ export class GitHubClient {
     } catch (error) {
       console.error('Token verification failed:', error)
       return false
+    }
+  }
+
+  /**
+   * ファイル移動を1コミットで実行
+   * base_treeを使わず、完全な新しいツリーを作成することで削除と作成の競合を回避
+   */
+  async moveFiles(
+    owner: string,
+    repo: string,
+    moves: Array<{ oldPath: string; newPath: string }>,
+    currentTree: FileTreeItem[],
+    message: string,
+    branch: string = 'main'
+  ): Promise<string> {
+    try {
+      // 1. 現在のブランチの最新コミットを取得
+      const branchData = await this.octokit.repos.getBranch({
+        owner,
+        repo,
+        branch,
+        headers: {
+          'If-None-Match': '',
+        },
+      })
+      const latestCommitSHA = branchData.data.commit.sha
+
+      // 3. 移動マップを作成
+      const moveMap = new Map(moves.map((m) => [m.oldPath, m.newPath]))
+
+      // 4. 新しいツリーを構築（移動を反映）
+      const newTreeItems: Array<{
+        path: string
+        mode: '100644' | '100755' | '040000' | '160000' | '120000'
+        type: 'blob' | 'tree'
+        sha: string
+      }> = []
+
+      for (const item of currentTree) {
+        // ディレクトリはスキップ（ファイルのみを含める）
+        if (item.type === 'dir') continue
+
+        // 移動元のパスをスキップ
+        if (moveMap.has(item.path)) {
+          // 移動先のパスで追加
+          newTreeItems.push({
+            path: moveMap.get(item.path)!,
+            mode: '100644',
+            type: 'blob',
+            sha: item.sha,
+          })
+        } else if (
+          // 移動元ディレクトリ配下のファイルをスキップ & 移動先に追加
+          Array.from(moveMap.keys()).some((oldPath) => item.path.startsWith(oldPath + '/'))
+        ) {
+          // 該当する移動元ディレクトリを見つける
+          const moveDirEntry = moves.find((m) => item.path.startsWith(m.oldPath + '/'))
+          if (moveDirEntry) {
+            const relativePath = item.path.substring(moveDirEntry.oldPath.length)
+            newTreeItems.push({
+              path: moveDirEntry.newPath + relativePath,
+              mode: '100644',
+              type: 'blob',
+              sha: item.sha,
+            })
+          }
+        } else {
+          // 移動に関係ないファイルはそのまま
+          newTreeItems.push({
+            path: item.path,
+            mode: '100644',
+            type: 'blob',
+            sha: item.sha,
+          })
+        }
+      }
+
+      // 5. 新しいツリーを作成（base_treeなし）
+      const newTree = await this.octokit.git.createTree({
+        owner,
+        repo,
+        tree: newTreeItems,
+      })
+
+      // 6. 新しいコミットを作成
+      const newCommit = await this.octokit.git.createCommit({
+        owner,
+        repo,
+        message,
+        tree: newTree.data.sha,
+        parents: [latestCommitSHA],
+      })
+
+      // 7. ブランチの参照を更新
+      await this.octokit.git.updateRef({
+        owner,
+        repo,
+        ref: `heads/${branch}`,
+        sha: newCommit.data.sha,
+      })
+
+      return newCommit.data.sha
+    } catch (error) {
+      console.error('Failed to move files:', error)
+      throw error
     }
   }
 }

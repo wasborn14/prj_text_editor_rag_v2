@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import type { DragStartEvent, DragOverEvent, DragEndEvent, DragMoveEvent } from '@dnd-kit/core'
-import { FileTreeItem } from '@/lib/github'
+import { useQueryClient } from '@tanstack/react-query'
+import { FileTreeItem, Repository, GitHubClient } from '@/lib/github'
 import {
   TreeNode,
   DragDropHandlers,
@@ -21,6 +22,8 @@ interface UseFileTreeDragDropProps {
   selectedPaths: Set<string>
   emptyDirectories: Set<string>
   localExpandedDirs: Set<string>
+  repository: Repository | null
+  githubToken: string | null
   setFileTree: (fileTree: FileTreeItem[]) => void
   setEmptyDirectories: (updater: (prev: Set<string>) => Set<string>) => void
   setLocalExpandedDirs: (updater: (prev: Set<string>) => Set<string>) => void
@@ -38,11 +41,14 @@ export function useFileTreeDragDrop({
   fileTree,
   selectedPaths,
   localExpandedDirs,
+  repository,
+  githubToken,
   setFileTree,
   setEmptyDirectories,
   setLocalExpandedDirs,
   setSelectedPaths,
 }: UseFileTreeDragDropProps): DragDropHandlers {
+  const queryClient = useQueryClient()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
 
@@ -327,11 +333,41 @@ export function useFileTreeDragDrop({
         })
         return newSelected
       })
+
+      // GitHub同期
+      if (repository && githubToken && movedPaths.size > 0) {
+        ;(async () => {
+          try {
+            const [owner, repoName] = repository.full_name.split('/')
+            const client = new GitHubClient(githubToken)
+
+            // 移動情報を配列に変換
+            const moves = Array.from(movedPaths).map(([oldPath, newPath]) => ({
+              oldPath,
+              newPath,
+            }))
+
+            const movedItems = Array.from(movedPaths.keys()).join(', ')
+            await client.moveFiles(owner, repoName, moves, fileTree, `Move: ${movedItems}`)
+          } catch (error) {
+            console.error('[GitHub Sync] Failed to sync file move:', error)
+            // エラー時は最新のGitHub状態を取得
+            await queryClient.invalidateQueries({
+              queryKey: ['fileTree', repository.full_name],
+              exact: true,
+              refetchType: 'active',
+            })
+          }
+        })()
+      }
     },
     [
       flatTree,
       fileTree,
       selectedPaths,
+      repository,
+      githubToken,
+      queryClient,
       clearAllTimers,
       setFileTree,
       setEmptyDirectories,
