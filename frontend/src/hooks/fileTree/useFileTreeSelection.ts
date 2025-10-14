@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { TreeNode, SelectionHandlers } from '@/lib/fileTree/types'
+import { useFileTreeStore } from '@/stores/fileTreeStore'
 
 /**
  * ファイルツリーの選択機能を管理するカスタムフック
@@ -8,7 +9,10 @@ import { TreeNode, SelectionHandlers } from '@/lib/fileTree/types'
  * - 範囲選択（Shift + クリック）
  */
 export function useFileTreeSelection(flatTree: TreeNode[]): SelectionHandlers {
-  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
+  const selectedPaths = useFileTreeStore((state) => state.selectedPaths)
+  const setSelectedPaths = useFileTreeStore((state) => state.setSelectedPaths)
+  const clearSelection = useFileTreeStore((state) => state.clearSelection)
+
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null)
 
   const handleItemClick = useCallback(
@@ -36,21 +40,16 @@ export function useFileTreeSelection(flatTree: TreeNode[]): SelectionHandlers {
           const [start, end] =
             startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex]
           const rangeItems = flatTree.slice(start, end + 1).map((n) => n.fullPath)
-          setSelectedPaths(new Set(rangeItems))
+          setSelectedPaths(() => new Set(rangeItems))
         }
       } else {
         // 通常クリック: 単一選択
-        setSelectedPaths(new Set([path]))
+        setSelectedPaths(() => new Set([path]))
         setLastSelectedPath(path)
       }
     },
-    [lastSelectedPath, flatTree]
+    [lastSelectedPath, flatTree, setSelectedPaths]
   )
-
-  const clearSelection = useCallback(() => {
-    setSelectedPaths(new Set())
-    setLastSelectedPath(null)
-  }, [])
 
   return {
     selectedPaths,

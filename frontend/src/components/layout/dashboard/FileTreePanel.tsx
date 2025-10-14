@@ -1,60 +1,49 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useMemo } from 'react'
 import '@/styles/FileTreePanel.css'
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { FolderOpen, File, Loader2 } from 'lucide-react'
-import { FileTreeItem as GitHubFileTreeItem } from '@/lib/github'
+import { Loader2 } from 'lucide-react'
 import {
   FileTreePanelProps,
   buildTreeStructure,
   flattenTree,
-  DUMMY_FILE_TREE,
-  DUMMY_EMPTY_DIRS,
+  isNodeInDragOverDirectory,
 } from '@/lib/fileTree'
 import { useFileTreeSelection, useFileTreeDragDrop } from '@/hooks/fileTree'
+import { useFileTreeStore } from '@/stores/fileTreeStore'
 import { FileTreeItem } from './FileTreeItem'
+import { DragOverlayItem } from './DragOverlayItem'
 
 /**
  * ファイルツリーパネルのメインコンポーネント
  */
 export function FileTreePanel({
   selectedRepo,
-  fileTree: propFileTree,
   treeLoading,
   error,
-  useDummyData = true,
 }: FileTreePanelProps) {
-  // ダミーデータ用のローカルステート
-  const [fileTree, setFileTree] = useState<GitHubFileTreeItem[]>(
-    useDummyData ? DUMMY_FILE_TREE : propFileTree
-  )
-  const [emptyDirectories, setEmptyDirectories] = useState<Set<string>>(DUMMY_EMPTY_DIRS)
-  const [localExpandedDirs, setLocalExpandedDirs] = useState<Set<string>>(new Set([]))
+  // Zustandストアから状態を取得
+  const {
+    localFileTree,
+    setLocalFileTree,
+    emptyDirectories,
+    setEmptyDirectories,
+    expandedDirs,
+    toggleDirectory,
+    setExpandedDirs,
+  } = useFileTreeStore()
 
   // ツリー構造を構築
   const tree = useMemo(
-    () => buildTreeStructure(fileTree, emptyDirectories),
-    [fileTree, emptyDirectories]
+    () => buildTreeStructure(localFileTree, emptyDirectories),
+    [localFileTree, emptyDirectories]
   )
   const flatTree = useMemo(
-    () => flattenTree(tree, localExpandedDirs),
-    [tree, localExpandedDirs]
+    () => flattenTree(tree, expandedDirs),
+    [tree, expandedDirs]
   )
-
-  // ディレクトリの展開/折りたたみ
-  const handleToggle = useCallback((path: string) => {
-    setLocalExpandedDirs((prev) => {
-      const newExpanded = new Set(prev)
-      if (newExpanded.has(path)) {
-        newExpanded.delete(path)
-      } else {
-        newExpanded.add(path)
-      }
-      return newExpanded
-    })
-  }, [])
 
   // 選択機能のカスタムフック
   const selection = useFileTreeSelection(flatTree)
@@ -62,13 +51,13 @@ export function FileTreePanel({
   // ドラッグ&ドロップ機能のカスタムフック
   const dragDrop = useFileTreeDragDrop({
     flatTree,
-    fileTree,
+    fileTree: localFileTree,
     selectedPaths: selection.selectedPaths,
     emptyDirectories,
-    localExpandedDirs,
-    setFileTree,
+    localExpandedDirs: expandedDirs,
+    setFileTree: setLocalFileTree,
     setEmptyDirectories,
-    setLocalExpandedDirs,
+    setLocalExpandedDirs: setExpandedDirs,
     setSelectedPaths: selection.setSelectedPaths,
   })
 
@@ -93,18 +82,15 @@ export function FileTreePanel({
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
           ファイル一覧
         </h2>
-        {useDummyData && (
-          <span className="text-xs text-orange-500 font-medium">ダミーデータ</span>
-        )}
       </div>
 
-      {!selectedRepo && !useDummyData && (
+      {!selectedRepo && (
         <p className="text-sm text-gray-500 dark:text-gray-400">
           リポジトリを選択してください
         </p>
       )}
 
-      {selectedRepo && treeLoading && !useDummyData && (
+      {selectedRepo && treeLoading && (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Loader2 className="h-4 w-4 animate-spin" />
           読み込み中...
@@ -123,57 +109,38 @@ export function FileTreePanel({
           items={flatTree.map((node) => node.fullPath)}
           strategy={verticalListSortingStrategy}
         >
-          {(useDummyData || (selectedRepo && !treeLoading && fileTree.length > 0)) && (
+          {selectedRepo && !treeLoading && localFileTree.length > 0 && (
             <div className="space-y-0.5">
-              {flatTree.map((node) => {
-                const isInDragOverDir =
-                  overNode?.type === 'dir' &&
-                  dragDrop.overId !== null &&
-                  (node.fullPath === dragDrop.overId ||
-                    node.fullPath.startsWith(dragDrop.overId + '/'))
-
-                return (
-                  <FileTreeItem
-                    key={node.fullPath}
-                    node={node}
-                    isExpanded={localExpandedDirs.has(node.fullPath)}
-                    isSelected={selection.selectedPaths.has(node.fullPath)}
-                    onToggle={() => handleToggle(node.fullPath)}
-                    onItemClick={(e) => selection.handleItemClick(node.fullPath, e)}
-                    isDragOver={dragDrop.overId === node.fullPath}
-                    isInDragOverDirectory={isInDragOverDir}
-                  />
-                )
-              })}
+              {flatTree.map((node) => (
+                <FileTreeItem
+                  key={node.fullPath}
+                  node={node}
+                  isExpanded={expandedDirs.has(node.fullPath)}
+                  isSelected={selection.selectedPaths.has(node.fullPath)}
+                  onToggle={() => toggleDirectory(node.fullPath)}
+                  onItemClick={(e) => selection.handleItemClick(node.fullPath, e)}
+                  isDragOver={dragDrop.overId === node.fullPath}
+                  isInDragOverDirectory={isNodeInDragOverDirectory(
+                    node,
+                    dragDrop.overId,
+                    overNode
+                  )}
+                />
+              ))}
             </div>
           )}
         </SortableContext>
 
         <DragOverlay>
-          {activeNode && (
-            <div className="flex items-center gap-2 rounded bg-white px-2 py-1 shadow-lg dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
-              {activeNode.type === 'dir' ? (
-                <FolderOpen className="h-4 w-4 text-blue-500" />
-              ) : (
-                <File className="h-4 w-4 text-gray-400" />
-              )}
-              <span className="text-sm text-gray-900 dark:text-gray-100">
-                {activeNode.name}
-              </span>
-            </div>
-          )}
+          {activeNode && <DragOverlayItem node={activeNode} />}
         </DragOverlay>
       </DndContext>
 
-      {!useDummyData &&
-        selectedRepo &&
-        !treeLoading &&
-        fileTree.length === 0 &&
-        !error && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            ファイルが見つかりませんでした
-          </p>
-        )}
+      {selectedRepo && !treeLoading && localFileTree.length === 0 && !error && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          ファイルが見つかりませんでした
+        </p>
+      )}
     </div>
   )
 }

@@ -4,8 +4,8 @@ export * from './types'
 // Constants
 export * from './constants'
 
-// Dummy Data
-export * from './dummyData'
+// Utils
+export * from './utils'
 
 // Tree Builder
 export * from './treeBuilder'

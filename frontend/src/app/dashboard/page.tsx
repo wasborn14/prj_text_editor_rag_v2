@@ -20,8 +20,6 @@ export default function DashboardPage() {
   const { user, githubToken, signOut, needsTokenSetup, tokenSetupReason } =
     useAuthStore()
 
-  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
-
   // TanStack Queryを使用してデータ取得
   const {
     data: repositories = [],
@@ -67,7 +65,6 @@ export default function DashboardPage() {
   const handleRepoChange = async (repoFullName: string) => {
     const repo = repositories.find((r) => r.full_name === repoFullName)
     setManualSelectedRepo(repo || null)
-    setExpandedDirs(new Set())
 
     // Supabaseに保存
     if (repo) {
@@ -83,16 +80,6 @@ export default function DashboardPage() {
         console.error('Failed to save selected repository:', error)
       }
     }
-  }
-
-  const toggleDirectory = (path: string) => {
-    const newExpanded = new Set(expandedDirs)
-    if (newExpanded.has(path)) {
-      newExpanded.delete(path)
-    } else {
-      newExpanded.add(path)
-    }
-    setExpandedDirs(newExpanded)
   }
 
   if (loading || !isAuthenticated) {
@@ -144,12 +131,8 @@ export default function DashboardPage() {
             {/* File Tree Panel */}
             <FileTreePanel
               selectedRepo={selectedRepo}
-              fileTree={fileTree}
               treeLoading={treeLoading}
-              expandedDirs={expandedDirs}
               error={error}
-              onToggleDirectory={toggleDirectory}
-              useDummyData={true}
             />
 
             {/* Content Area */}

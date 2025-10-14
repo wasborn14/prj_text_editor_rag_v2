@@ -17,12 +17,8 @@ export interface TreeNode {
  */
 export interface FileTreePanelProps {
   selectedRepo: Repository | null
-  fileTree: FileTreeItem[]
   treeLoading: boolean
-  expandedDirs: Set<string>
   error: string | null
-  onToggleDirectory: (path: string) => void
-  useDummyData?: boolean
 }
 
 /**

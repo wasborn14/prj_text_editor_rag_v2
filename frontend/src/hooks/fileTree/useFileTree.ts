@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { GitHubClient, Repository } from '@/lib/github'
+import { useFileTreeStore } from '@/stores/fileTreeStore'
+import { useEffect } from 'react'
 
 export function useFileTree(
   githubToken: string | null,
   repository: Repository | null
 ) {
-  return useQuery({
+  const setLocalFileTree = useFileTreeStore((state) => state.setLocalFileTree)
+  const resetFileTree = useFileTreeStore((state) => state.resetFileTree)
+
+  const query = useQuery({
     queryKey: ['fileTree', repository?.full_name],
     queryFn: async () => {
       if (!githubToken || !repository) {
@@ -18,4 +23,18 @@ export function useFileTree(
     enabled: !!githubToken && !!repository,
     staleTime: 5 * 60 * 1000, // 5分
   })
+
+  // TanStack Queryで取得したデータをZustandストアに同期
+  useEffect(() => {
+    if (query.data) {
+      setLocalFileTree(query.data)
+    }
+  }, [query.data, setLocalFileTree])
+
+  // リポジトリ変更時にストアをリセット
+  useEffect(() => {
+    resetFileTree()
+  }, [repository?.full_name, resetFileTree])
+
+  return query
 }
