@@ -37,7 +37,6 @@ export function useFileTreeDragDrop({
   flatTree,
   fileTree,
   selectedPaths,
-  emptyDirectories,
   localExpandedDirs,
   setFileTree,
   setEmptyDirectories,
@@ -212,11 +211,31 @@ export function useFileTreeDragDrop({
       const targetDir =
         overNode.type === 'dir' ? overNode.fullPath : getParentDir(overNode.fullPath)
 
-      // 自分自身の子孫への移動を防ぐ
+      // 移動対象のアイテムのパスをセットに格納（高速検索用）
+      const selectedPathsSet = new Set(itemsToMove.map(item => item.fullPath))
+
+      // 自分自身または選択されたディレクトリへの移動を防ぐ
       for (const item of itemsToMove) {
-        if (item.type === 'dir' && targetDir?.startsWith(item.fullPath + '/')) {
-          console.log('Cannot move directory into its own subdirectory')
+        // 1. 自分自身への移動を防ぐ
+        if (item.fullPath === targetDir) {
           return
+        }
+
+        // 2. 自分自身の子孫への移動を防ぐ
+        if (item.type === 'dir' && targetDir?.startsWith(item.fullPath + '/')) {
+          return
+        }
+
+        // 3. 選択されたディレクトリの中への移動を防ぐ
+        if (targetDir && selectedPathsSet.has(targetDir)) {
+          return
+        }
+
+        // 4. 選択されたディレクトリの子孫への移動を防ぐ
+        for (const selectedPath of selectedPathsSet) {
+          if (targetDir?.startsWith(selectedPath + '/')) {
+            return
+          }
         }
       }
 
