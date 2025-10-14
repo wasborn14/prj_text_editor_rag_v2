@@ -85,9 +85,6 @@ export class GitHubClient {
       const { data: repoData } = await this.octokit.repos.get({
         owner,
         repo,
-        headers: {
-          'If-None-Match': '',
-        },
       })
       const defaultBranch = branch || repoData.default_branch
 
