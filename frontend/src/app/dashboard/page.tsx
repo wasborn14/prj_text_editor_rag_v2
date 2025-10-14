@@ -132,7 +132,10 @@ export default function DashboardPage() {
 
           {/* Editor Area */}
           <div className="flex flex-1 overflow-hidden">
-            <FileEditor />
+            <FileEditor
+              owner={selectedRepo ? selectedRepo.full_name.split('/')[0] : null}
+              repo={selectedRepo ? selectedRepo.full_name.split('/')[1] : null}
+            />
           </div>
         </main>
       </div>

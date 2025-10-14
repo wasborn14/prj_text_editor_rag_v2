@@ -14,6 +14,7 @@ import { useFileTreeSelection, useFileTreeDragDrop } from '@/hooks/fileTree'
 import { useFileTreeStore } from '@/stores/fileTreeStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useSidebarStore } from '@/stores/sidebarStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { FileTreeItem } from './FileTreeItem'
 import { DragOverlayItem } from './DragOverlayItem'
 import { Repository } from '@/lib/github'
@@ -39,6 +40,7 @@ export function FileTreePanel({
   onRepoChange,
 }: FileTreePanelProps) {
   const { isOpen, close } = useSidebarStore()
+  const { setSelectedFile } = useEditorStore()
 
   // Zustandストアから状態を取得
   const {
@@ -101,7 +103,12 @@ export function FileTreePanel({
   // ファイル/ディレクトリ選択時の処理
   const handleItemClick = (fullPath: string, e: React.MouseEvent) => {
     selection.handleItemClick(fullPath, e)
-    // モバイルでもサイドバーは閉じない
+
+    // ファイルの場合、選択パスをストアに保存（TanStack Queryが自動で取得）
+    const node = flatTree.find((n) => n.fullPath === fullPath)
+    if (node && node.type === 'file') {
+      setSelectedFile(fullPath)
+    }
   }
 
   return (
