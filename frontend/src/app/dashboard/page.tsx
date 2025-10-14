@@ -11,7 +11,7 @@ import {
   DashboardHeader,
   RepositoryContentArea,
 } from '@/components/layout'
-import { FileTreePanelNew } from '@/components/layout/dashboard/FileTreePanelNew'
+import { FileTreePanel } from '@/components/layout/dashboard/FileTreePanel'
 import { Repository } from '@/lib/github'
 import { AlertCircle } from 'lucide-react'
 
@@ -142,7 +142,7 @@ export default function DashboardPage() {
         <main className="flex flex-1 overflow-hidden">
           <div className="mx-auto flex w-full max-w-7xl flex-1 gap-4 px-4 py-6 sm:px-6 lg:px-8">
             {/* File Tree Panel */}
-            <FileTreePanelNew
+            <FileTreePanel
               selectedRepo={selectedRepo}
               fileTree={fileTree}
               treeLoading={treeLoading}
