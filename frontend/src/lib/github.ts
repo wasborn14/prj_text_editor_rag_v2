@@ -86,13 +86,13 @@ export class GitHubClient {
         owner,
         repo,
       })
-      const defaultBranch = branch || repoData.default_branch
+      const targetBranch = branch || repoData.default_branch
 
       // ブランチの最新コミットを取得
       const { data: branchData } = await this.octokit.repos.getBranch({
         owner,
         repo,
-        branch: defaultBranch,
+        branch: targetBranch,
         headers: {
           'If-None-Match': '',
         },
