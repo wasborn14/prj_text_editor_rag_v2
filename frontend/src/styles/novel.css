@@ -65,11 +65,15 @@
 .ProseMirror ul {
   margin: 1rem 0 !important;
   padding-left: 1.5rem !important;
+  list-style-type: disc !important;
+  list-style-position: outside !important;
 }
 
 .ProseMirror ol {
   margin: 1rem 0 !important;
   padding-left: 1.5rem !important;
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
 }
 
 .ProseMirror li {
@@ -77,10 +81,21 @@
   line-height: 1.6 !important;
   margin: 0.25rem 0 !important;
   color: #4b5563 !important;
+  display: list-item !important;
 }
 
 .ProseMirror li p {
   margin: 0 !important;
+  display: inline !important;
+}
+
+/* ネストされたリスト */
+.ProseMirror ul ul,
+.ProseMirror ol ol,
+.ProseMirror ul ol,
+.ProseMirror ol ul {
+  margin: 0.25rem 0 !important;
+  padding-left: 1rem !important;
 }
 
 /* Code blocks - Notion風スタイル */
