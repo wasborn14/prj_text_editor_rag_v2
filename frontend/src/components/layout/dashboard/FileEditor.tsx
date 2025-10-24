@@ -2,20 +2,16 @@
 
 import React, { useMemo, useState, useEffect } from 'react'
 import { EditorRoot, EditorContent, useEditor } from 'novel'
-import StarterKit from '@tiptap/starter-kit'
-import Table from '@tiptap/extension-table'
-import TableRow from '@tiptap/extension-table-row'
-import TableHeader from '@tiptap/extension-table-header'
-import TableCell from '@tiptap/extension-table-cell'
-import { Extension } from '@tiptap/core'
 import { useEditorStore } from '@/stores/editorStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useFileContent } from '@/hooks/useFileContent'
 import { Loader2 } from 'lucide-react'
 import type { NovelEditor } from '@/types/prosemirror'
-import '@/styles/novel.css'
 import { convertMarkdownToContent } from '@/lib/editor/markdownConverter'
 import { DUMMY_MARKDOWN } from '@/constants/dummyMarkdown'
+import { getEditorExtensions } from '@/lib/editor/editorExtensions'
+import '@/styles/novel.css'
+import '@/styles/syntax-highlight.css'
 interface FileEditorProps {
   owner: string | null
   repo: string | null
@@ -222,27 +218,6 @@ const TableToolbar = ({ editor, onClose }: { editor: NovelEditor; onClose: () =>
   )
 }
 
-const SlashMenuExtension = Extension.create({
-  name: 'slashMenu',
-
-  addStorage() {
-    return {
-      menuOpen: false,
-    }
-  },
-
-  addKeyboardShortcuts() {
-    return {
-      Enter: () => {
-        if (this.storage.menuOpen) {
-          return true
-        }
-        return false
-      },
-    }
-  },
-})
-
 export function FileEditor({ owner, repo }: FileEditorProps) {
   const { selectedFilePath } = useEditorStore()
   const githubToken = useAuthStore((state) => state.githubToken)
@@ -399,16 +374,7 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
         <div key={selectedFilePath} className="w-full h-full">
           <EditorRoot>
             <EditorContent
-              extensions={[
-                StarterKit,
-                SlashMenuExtension,
-                Table.configure({
-                  resizable: true,
-                }),
-                TableRow,
-                TableHeader,
-                TableCell,
-              ]}
+              extensions={getEditorExtensions()}
               initialContent={editorContent}
               className="min-h-full p-4 md:p-8 prose prose-lg max-w-none md:max-w-4xl md:mx-auto"
               immediatelyRender={false}

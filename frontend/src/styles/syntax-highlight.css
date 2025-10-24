@@ -1,0 +1,89 @@
+/* Custom Syntax Highlighting Theme */
+/* Based on Tomorrow Night Bright Theme */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+}
+
+code.hljs {
+  padding: 3px 5px;
+}
+
+/* Comments - Green */
+.hljs-comment,
+.hljs-quote {
+  color: #6A9955 !important;
+}
+
+/* Cyan - Variables, Properties */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+  color: #9CDCFE !important;
+}
+
+/* Light Blue - Types, Built-ins */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+  color: #4EC9B0 !important;
+}
+
+/* Cyan - Attributes, Properties */
+.hljs-attribute,
+.hljs-property,
+.hljs-attr {
+  color: #9CDCFE !important;
+}
+
+/* Orange - Strings */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+  color: #CE9178 !important;
+}
+
+/* Yellow - Functions */
+.hljs-title,
+.hljs-section {
+  color: #DCDCAA !important;
+}
+
+/* Purple/Pink - Keywords */
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #C586C0 !important;
+}
+
+/* Base styles */
+.hljs {
+  background: black;
+  color: #eaeaea;
+}
+
+/* Punctuation - brackets, braces, parentheses */
+.hljs-punctuation {
+  color: #ffd700;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
