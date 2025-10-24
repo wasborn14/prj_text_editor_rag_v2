@@ -131,8 +131,7 @@ const SlashCommandMenu = ({ editor, onClose, showMenu }: { editor: NovelEditor; 
 
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, filteredCommands, editor, onClose])
+  }, [selectedIndex, filteredCommands, editor, onClose, showMenu])
 
   return (
     <div className="absolute z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -282,7 +281,6 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
       if (slashMenuExt) {
         slashMenuExt.storage.menuOpen = showMenu
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editor])
 
     useEffect(() => {
