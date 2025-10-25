@@ -13,6 +13,7 @@ import { FileTreePanel } from '@/components/layout/dashboard/sidebar/FileTreePan
 import { FileEditor } from '@/components/layout/dashboard/editor/FileEditor'
 import { Repository } from '@/lib/github'
 import { AlertCircle } from 'lucide-react'
+import { RAGPanel } from '@/components/layout/dashboard/rag/RAGPanel'
 
 export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
@@ -151,6 +152,9 @@ export default function DashboardPage() {
               repo={selectedRepo ? selectedRepo.full_name.split('/')[1] : null}
             />
           </div>
+
+        {/* RAG検索パネル */}
+        <RAGPanel repository={selectedRepo ? selectedRepo.full_name : undefined} />
         </main>
       </div>
     </>

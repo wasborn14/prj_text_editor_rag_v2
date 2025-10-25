@@ -3,6 +3,8 @@ import { Menu, X, LogOut, Save } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
+import { useRAGPanelStore } from '@/stores/ragPanelStore'
+import { Search } from 'lucide-react'
 
 interface DashboardHeaderProps {
   user: SupabaseUser | null
@@ -20,6 +22,7 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const { isOpen, toggle } = useSidebarStore()
   const { isModified, selectedFilePath } = useEditorStore()
+  const { isVisible: isRAGVisible, togglePanel } = useRAGPanelStore()
 
   const handleSave = () => {
     window.dispatchEvent(new CustomEvent('editor:save'))
@@ -64,6 +67,22 @@ export function DashboardHeader({
               <span className="hidden md:inline text-xs opacity-70">⌘S</span>
             </button>
           )}
+
+
+          <button
+            onClick={togglePanel}
+            className={`
+              flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-colors
+              ${isRAGVisible
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }
+            `}
+            title="RAG Search"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden sm:inline text-sm font-medium">RAG Search</span>
+          </button>
 
           {/* ログアウトボタン（モバイルはアイコンのみ、デスクトップはフルボタン） */}
           <button
