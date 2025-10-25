@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useEditor } from 'novel'
 import { SlashCommandMenu } from './SlashCommandMenu'
 import { TableToolbar } from './TableToolbar'
