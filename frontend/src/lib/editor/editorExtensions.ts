@@ -11,7 +11,50 @@ import ListItem from '@tiptap/extension-list-item'
 // Highlight.js設定
 const lowlight = createLowlight(common)
 
-// スラッシュメニュー拡張
+// IME変換中フラグ（グローバル）
+let isComposing = false
+
+/**
+ * IME（日本語入力）制御拡張
+ */
+const IMEExtension = Extension.create({
+  name: 'imeHandler',
+
+  onCreate() {
+    // compositionstartとcompositionendをリッスン
+    if (typeof window !== 'undefined') {
+      const handleCompositionStart = () => {
+        isComposing = true
+      }
+      const handleCompositionEnd = () => {
+        isComposing = false
+      }
+
+      window.addEventListener('compositionstart', handleCompositionStart)
+      window.addEventListener('compositionend', handleCompositionEnd)
+
+      // クリーンアップ用に保存
+      this.storage.cleanup = () => {
+        window.removeEventListener('compositionstart', handleCompositionStart)
+        window.removeEventListener('compositionend', handleCompositionEnd)
+      }
+    }
+  },
+
+  onDestroy() {
+    this.storage.cleanup?.()
+  },
+
+  addStorage() {
+    return {
+      cleanup: null,
+    }
+  },
+})
+
+/**
+ * スラッシュメニューが開いている時のEnterキー処理を制御する拡張
+ */
 const SlashMenuExtension = Extension.create({
   name: 'slashMenu',
 
@@ -24,6 +67,10 @@ const SlashMenuExtension = Extension.create({
   addKeyboardShortcuts() {
     return {
       Enter: () => {
+        // IME変換中は何もしない
+        if (isComposing) {
+          return false
+        }
         if (this.storage.menuOpen) {
           return true
         }
@@ -40,6 +87,11 @@ const CustomEnterExtension = Extension.create({
   addKeyboardShortcuts() {
     return {
       Enter: ({ editor }) => {
+        // IME変換中は何もしない
+        if (isComposing) {
+          return false
+        }
+
         const { state } = editor
         const { selection } = state
         const { $from, empty } = selection
@@ -105,6 +157,7 @@ const CustomEnterExtension = Extension.create({
  */
 export function getEditorExtensions() {
   return [
+    IMEExtension, // IME制御
     CustomEnterExtension, // 最優先で配置
     StarterKit.configure({
       codeBlock: false, // デフォルトのCodeBlockを無効化

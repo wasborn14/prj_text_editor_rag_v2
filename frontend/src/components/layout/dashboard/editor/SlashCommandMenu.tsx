@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { NovelEditor } from '@/types/prosemirror'
 import { SLASH_COMMANDS, executeSlashCommand } from '@/lib/editor/slashCommands'
 
@@ -11,6 +11,7 @@ interface SlashCommandMenuProps {
 export function SlashCommandMenu({ editor, onClose, showMenu }: SlashCommandMenuProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const search = ''
+  const isComposingRef = useRef(false)
 
   const filteredCommands = SLASH_COMMANDS.filter(cmd =>
     cmd.label.toLowerCase().includes(search.toLowerCase())
@@ -19,7 +20,20 @@ export function SlashCommandMenu({ editor, onClose, showMenu }: SlashCommandMenu
   useEffect(() => {
     if (!showMenu) return
 
+    // IME変換状態を追跡
+    const handleCompositionStart = () => {
+      isComposingRef.current = true
+    }
+    const handleCompositionEnd = () => {
+      isComposingRef.current = false
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      // IME変換中はキーイベントを処理しない
+      if (isComposingRef.current) {
+        return
+      }
+
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         e.stopPropagation()
@@ -43,8 +57,15 @@ export function SlashCommandMenu({ editor, onClose, showMenu }: SlashCommandMenu
       }
     }
 
+    window.addEventListener('compositionstart', handleCompositionStart)
+    window.addEventListener('compositionend', handleCompositionEnd)
     window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
+
+    return () => {
+      window.removeEventListener('compositionstart', handleCompositionStart)
+      window.removeEventListener('compositionend', handleCompositionEnd)
+      window.removeEventListener('keydown', handleKeyDown, true)
+    }
   }, [selectedIndex, filteredCommands, editor, onClose, showMenu])
 
   return (
