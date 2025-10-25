@@ -163,3 +163,117 @@ function convertInlineNode(node: MdastNode): JSONContent | null {
       return null
   }
 }
+
+/**
+ * TipTap JSONContentをMarkdownテキストに変換
+ */
+export function convertContentToMarkdown(json: JSONContent): string {
+  if (!json || !json.content) return ''
+
+  const lines: string[] = []
+
+  for (const node of json.content) {
+    const markdown = convertNodeToMarkdown(node)
+    if (markdown) {
+      lines.push(markdown)
+    }
+  }
+
+  return lines.join('\n\n')
+}
+
+function convertNodeToMarkdown(node: JSONContent, listLevel = 0): string {
+  if (!node.type) return ''
+
+  switch (node.type) {
+    case 'heading':
+      const level = node.attrs?.level || 1
+      const headingText = convertInlineContent(node.content || [])
+      return `${'#'.repeat(level)} ${headingText}`
+
+    case 'paragraph':
+      return convertInlineContent(node.content || [])
+
+    case 'codeBlock':
+      const lang = node.attrs?.language || ''
+      const code = node.content?.[0]?.text || ''
+      return `\`\`\`${lang}\n${code}\n\`\`\``
+
+    case 'blockquote':
+      const quoteLines = node.content?.map(n => convertNodeToMarkdown(n)) || []
+      return quoteLines.map(line => `> ${line}`).join('\n')
+
+    case 'bulletList':
+      return node.content?.map((item) => {
+        const itemText = convertListItem(item, listLevel)
+        return `${'  '.repeat(listLevel)}- ${itemText}`
+      }).join('\n') || ''
+
+    case 'orderedList':
+      return node.content?.map((item, index) => {
+        const itemText = convertListItem(item, listLevel)
+        return `${'  '.repeat(listLevel)}${index + 1}. ${itemText}`
+      }).join('\n') || ''
+
+    case 'listItem':
+      return convertListItem(node, listLevel)
+
+    case 'horizontalRule':
+      return '---'
+
+    case 'hardBreak':
+      return '  '
+
+    default:
+      return ''
+  }
+}
+
+function convertListItem(node: JSONContent, level: number): string {
+  if (!node.content) return ''
+
+  const parts: string[] = []
+
+  for (const child of node.content) {
+    if (child.type === 'paragraph') {
+      parts.push(convertInlineContent(child.content || []))
+    } else if (child.type === 'bulletList' || child.type === 'orderedList') {
+      // ネストされたリスト
+      const nested = convertNodeToMarkdown(child, level + 1)
+      parts.push('\n' + nested)
+    }
+  }
+
+  return parts.join('')
+}
+
+function convertInlineContent(content: JSONContent[]): string {
+  return content.map(node => {
+    if (node.type === 'text') {
+      let text = node.text || ''
+
+      // マークを適用
+      if (node.marks) {
+        for (const mark of node.marks) {
+          switch (mark.type) {
+            case 'bold':
+              text = `**${text}**`
+              break
+            case 'italic':
+              text = `*${text}*`
+              break
+            case 'code':
+              text = `\`${text}\``
+              break
+            case 'link':
+              text = `[${text}](${mark.attrs?.href || ''})`
+              break
+          }
+        }
+      }
+
+      return text
+    }
+    return ''
+  }).join('')
+}

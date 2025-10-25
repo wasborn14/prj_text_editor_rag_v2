@@ -153,11 +153,31 @@ const CustomEnterExtension = Extension.create({
 })
 
 /**
+ * 保存ショートカット拡張 (Cmd+S / Ctrl+S)
+ */
+const SaveExtension = Extension.create({
+  name: 'saveShortcut',
+
+  addKeyboardShortcuts() {
+    return {
+      'Mod-s': () => {
+        // カスタムイベントを発行して保存をトリガー
+        window.dispatchEvent(new CustomEvent('editor:save'))
+        return true // デフォルトのブラウザ保存を防止
+      },
+    }
+  },
+
+  priority: 1000,
+})
+
+/**
  * エディタの拡張機能を取得
  */
 export function getEditorExtensions() {
   return [
     IMEExtension, // IME制御
+    SaveExtension, // 保存ショートカット
     CustomEnterExtension, // 最優先で配置
     StarterKit.configure({
       codeBlock: false, // デフォルトのCodeBlockを無効化

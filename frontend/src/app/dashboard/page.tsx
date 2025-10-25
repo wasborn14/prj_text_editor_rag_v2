@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useRepositories } from '@/hooks/useRepositories'
 import { useFileTree } from '@/hooks/fileTree'
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
   const { user, githubToken, signOut, needsTokenSetup, tokenSetupReason } =
     useAuthStore()
+  const { isModified } = useEditorStore()
 
   // TanStack Queryを使用してデータ取得
   const {
@@ -60,6 +62,16 @@ export default function DashboardPage() {
   }
 
   const handleRepoChange = async (repoFullName: string) => {
+    // 未保存の変更がある場合は警告
+    if (isModified) {
+      const confirmed = window.confirm(
+        '保存されていない変更があります。リポジトリを切り替えると変更が失われます。続けますか？'
+      )
+      if (!confirmed) {
+        return
+      }
+    }
+
     const repo = repositories.find((r) => r.full_name === repoFullName)
     setManualSelectedRepo(repo || null)
 

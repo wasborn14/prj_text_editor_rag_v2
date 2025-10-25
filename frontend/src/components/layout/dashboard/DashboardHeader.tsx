@@ -1,7 +1,8 @@
 import React from 'react'
-import { Menu, X, LogOut } from 'lucide-react'
+import { Menu, X, LogOut, Save } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { useSidebarStore } from '@/stores/sidebarStore'
+import { useEditorStore } from '@/stores/editorStore'
 
 interface DashboardHeaderProps {
   user: SupabaseUser | null
@@ -18,6 +19,11 @@ export function DashboardHeader({
   onSignOut,
 }: DashboardHeaderProps) {
   const { isOpen, toggle } = useSidebarStore()
+  const { isModified, selectedFilePath } = useEditorStore()
+
+  const handleSave = () => {
+    window.dispatchEvent(new CustomEvent('editor:save'))
+  }
 
   return (
     <header className="flex-shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -39,15 +45,36 @@ export function DashboardHeader({
           </p>
         </div>
 
-        {/* 右側: ログアウトボタン（モバイルはアイコンのみ、デスクトップはフルボタン） */}
-        <button
-          onClick={onSignOut}
-          className="flex items-center gap-2 rounded-lg p-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 md:bg-gray-900 md:px-4 md:py-2 md:text-sm md:font-medium md:text-white md:hover:bg-gray-800 dark:md:bg-white dark:md:text-gray-900 dark:md:hover:bg-gray-100"
-          aria-label="ログアウト"
-        >
-          <LogOut className="h-5 w-5 md:h-4 md:w-4" />
-          <span className="hidden md:inline">ログアウト</span>
-        </button>
+        {/* 右側: Saveボタン + ログアウトボタン */}
+        <div className="flex items-center gap-2">
+          {/* Saveボタン */}
+          {selectedFilePath && (
+            <button
+              onClick={handleSave}
+              disabled={!isModified}
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                isModified
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+              title="Cmd+S / Ctrl+S"
+            >
+              <Save className="h-4 w-4" />
+              <span className="hidden sm:inline">Save</span>
+              <span className="hidden md:inline text-xs opacity-70">⌘S</span>
+            </button>
+          )}
+
+          {/* ログアウトボタン（モバイルはアイコンのみ、デスクトップはフルボタン） */}
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-2 rounded-lg p-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 md:bg-gray-900 md:px-4 md:py-2 md:text-sm md:font-medium md:text-white md:hover:bg-gray-800 dark:md:bg-white dark:md:text-gray-900 dark:md:hover:bg-gray-100"
+            aria-label="ログアウト"
+          >
+            <LogOut className="h-5 w-5 md:h-4 md:w-4" />
+            <span className="hidden md:inline">ログアウト</span>
+          </button>
+        </div>
       </div>
     </header>
   )

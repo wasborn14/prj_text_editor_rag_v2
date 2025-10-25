@@ -136,6 +136,9 @@ export class GitHubClient {
         owner,
         repo,
         path,
+        headers: {
+          'If-None-Match': '',
+        },
       })
 
       if (Array.isArray(data) || data.type !== 'file') {
