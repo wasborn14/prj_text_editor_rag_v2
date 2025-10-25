@@ -64,7 +64,7 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
             <EditorContent
               extensions={getEditorExtensions()}
               initialContent={editorContent}
-              className="min-h-full p-4 md:p-8 prose prose-lg max-w-none md:max-w-4xl md:mx-auto"
+              className="min-h-full p-4 md:p-8 prose prose-lg max-w-none md:max-w-6xl md:mx-auto"
               immediatelyRender={false}
             >
               <EditorContentWrapper
