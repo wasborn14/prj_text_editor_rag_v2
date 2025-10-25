@@ -6,6 +6,7 @@ import TableRow from '@tiptap/extension-table-row'
 import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
 import { Extension } from '@tiptap/core'
+import ListItem from '@tiptap/extension-list-item'
 
 // Highlight.js設定
 const lowlight = createLowlight(common)
@@ -32,13 +33,95 @@ const SlashMenuExtension = Extension.create({
   },
 })
 
+// カスタムEnterキー処理（TipTap公式コマンドを使用）
+const CustomEnterExtension = Extension.create({
+  name: 'customEnter',
+
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        const { state } = editor
+        const { selection } = state
+        const { $from, empty } = selection
+
+        // 選択範囲がある場合はデフォルト動作
+        if (!empty) {
+          return false
+        }
+
+        // リストアイテム内かチェック
+        const { listItem } = state.schema.nodes
+        let currentListItemDepth = -1
+
+        for (let i = $from.depth; i > 0; i--) {
+          if ($from.node(i).type === listItem) {
+            currentListItemDepth = i
+            break
+          }
+        }
+
+        // リストアイテム内でない場合はデフォルト動作
+        if (currentListItemDepth === -1) {
+          return false
+        }
+
+        // 空のリストアイテムかチェック
+        const currentListItem = $from.node(currentListItemDepth)
+        const isEmpty = currentListItem.textContent.length === 0
+
+        // テキストがある場合は通常の分割
+        if (!isEmpty) {
+          return editor.commands.splitListItem('listItem')
+        }
+
+        // 空のリストアイテムの場合
+        // ネストされているかチェック（親にもリストアイテムがあるか）
+        let parentListItemDepth = -1
+        for (let i = currentListItemDepth - 1; i > 0; i--) {
+          if ($from.node(i).type === listItem) {
+            parentListItemDepth = i
+            break
+          }
+        }
+
+        if (parentListItemDepth > 0) {
+          // ネストあり: liftListItemで1段上げる
+          return editor.commands.liftListItem('listItem')
+        } else {
+          // 1段目: リストから抜ける
+          return (
+            editor.commands.lift('listItem') || editor.commands.clearNodes()
+          )
+        }
+      },
+    }
+  },
+
+  priority: 1000, // 他の拡張より優先
+})
+
 /**
  * エディタの拡張機能を取得
  */
 export function getEditorExtensions() {
   return [
+    CustomEnterExtension, // 最優先で配置
     StarterKit.configure({
       codeBlock: false, // デフォルトのCodeBlockを無効化
+      listItem: false, // デフォルトのListItemを無効化（後で再設定）
+      bulletList: {
+        keepMarks: true,
+        keepAttributes: false,
+      },
+      orderedList: {
+        keepMarks: true,
+        keepAttributes: false,
+      },
+    }),
+    ListItem.configure({
+      HTMLAttributes: {
+        class: 'list-item',
+      },
     }),
     CodeBlockLowlight.configure({
       lowlight,
