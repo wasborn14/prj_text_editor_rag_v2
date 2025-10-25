@@ -1,3 +1,3 @@
 export { DashboardHeader } from './dashboard/DashboardHeader'
-export { FileTreePanel } from './dashboard/FileTreePanel'
-export { RepositoryContentArea } from './dashboard/RepositoryContentArea'
+export { FileTreePanel } from './dashboard/sidebar/FileTreePanel'
+export { RepositoryContentArea } from './dashboard/sidebar/RepositoryContentArea'
