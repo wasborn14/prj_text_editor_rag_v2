@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import '@/styles/FileTreePanel.css'
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -15,6 +15,8 @@ import { useFileTreeStore } from '@/stores/fileTreeStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
+import { useEditorState } from '@/hooks/useEditorState'
+import { useRestoreEditorState } from '@/hooks/useRestoreEditorState'
 import { FileTreeItem } from './FileTreeItem'
 import { DragOverlayItem } from './DragOverlayItem'
 import { Repository } from '@/lib/github'
@@ -55,6 +57,26 @@ export function FileTreePanel({
 
   // GitHubトークンを取得
   const githubToken = useAuthStore((state) => state.githubToken)
+
+  // エディタ状態の永続化
+  const { saveLastOpenedFile, saveExpandedFolders } = useEditorState()
+
+  // リポジトリ選択時に状態を復元
+  const fileTreeLoaded = localFileTree.length > 0 && !treeLoading
+  useRestoreEditorState(selectedRepo, fileTreeLoaded)
+
+  // フォルダ開閉時のハンドラ（トグル + 保存）
+  const handleToggleDirectory = useCallback((path: string) => {
+    toggleDirectory(path)
+
+    // トグル後の状態を計算して保存
+    const isCurrentlyExpanded = expandedDirs.has(path)
+    const newExpandedDirs = isCurrentlyExpanded
+      ? Array.from(expandedDirs).filter(p => p !== path)
+      : [...expandedDirs, path]
+
+    saveExpandedFolders(newExpandedDirs)
+  }, [toggleDirectory, expandedDirs, saveExpandedFolders])
 
   // ツリー構造を構築
   const tree = useMemo(
@@ -108,6 +130,7 @@ export function FileTreePanel({
     const node = flatTree.find((n) => n.fullPath === fullPath)
     if (node && node.type === 'file') {
       setSelectedFile(fullPath)
+      saveLastOpenedFile(fullPath) // Supabaseに保存
     }
   }
 
@@ -193,7 +216,7 @@ export function FileTreePanel({
                   node={node}
                   isExpanded={expandedDirs.has(node.fullPath)}
                   isSelected={selection.selectedPaths.has(node.fullPath)}
-                  onToggle={() => toggleDirectory(node.fullPath)}
+                  onToggle={() => handleToggleDirectory(node.fullPath)}
                   onItemClick={(e) => handleItemClick(node.fullPath, e)}
                   isDragOver={dragDrop.overId === node.fullPath}
                   isInDragOverDirectory={isNodeInDragOverDirectory(

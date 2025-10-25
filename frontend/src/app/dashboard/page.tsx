@@ -75,7 +75,7 @@ export default function DashboardPage() {
     const repo = repositories.find((r) => r.full_name === repoFullName)
     setManualSelectedRepo(repo || null)
 
-    // Supabaseに保存
+    // Supabaseに保存（エディタ状態をリセット）
     if (repo) {
       const [owner, name] = repo.full_name.split('/')
       try {
@@ -84,6 +84,8 @@ export default function DashboardPage() {
           repository_full_name: repo.full_name,
           repository_name: name,
           repository_owner: owner,
+          last_opened_file_path: null,  // リセット
+          expanded_folders: [],         // リセット
         })
       } catch (error) {
         console.error('Failed to save selected repository:', error)

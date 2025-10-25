@@ -74,7 +74,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { repository_id, repository_full_name, repository_name, repository_owner } = body
+    const {
+      repository_id,
+      repository_full_name,
+      repository_name,
+      repository_owner,
+      last_opened_file_path,
+      expanded_folders,
+    } = body
 
     if (!repository_id || !repository_full_name || !repository_name || !repository_owner) {
       return NextResponse.json(
@@ -93,6 +100,8 @@ export async function POST(request: Request) {
           repository_full_name,
           repository_name,
           repository_owner,
+          last_opened_file_path: last_opened_file_path ?? null,
+          expanded_folders: expanded_folders ?? [],
           selected_at: new Date().toISOString(),
         },
         {

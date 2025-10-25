@@ -7,6 +7,8 @@ interface SelectedRepository {
   repository_full_name: string
   repository_name: string
   repository_owner: string
+  last_opened_file_path: string | null
+  expanded_folders: string[]
   selected_at: string
   created_at: string
   updated_at: string
@@ -17,6 +19,8 @@ interface SaveRepositoryParams {
   repository_full_name: string
   repository_name: string
   repository_owner: string
+  last_opened_file_path?: string | null
+  expanded_folders?: string[]
 }
 
 export function useSelectedRepository() {
