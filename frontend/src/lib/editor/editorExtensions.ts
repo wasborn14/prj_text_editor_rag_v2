@@ -7,6 +7,7 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
 import { Extension } from '@tiptap/core'
 import ListItem from '@tiptap/extension-list-item'
+import Link from '@tiptap/extension-link'
 
 // Highlight.js設定
 const lowlight = createLowlight(common)
@@ -209,5 +210,12 @@ export function getEditorExtensions() {
     TableRow,
     TableHeader,
     TableCell,
+    Link.configure({
+      openOnClick: true,
+      HTMLAttributes: {
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+    }),
   ]
 }

@@ -57,16 +57,19 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
 
     case 'paragraph':
       const paragraphContent = node.children?.map(convertInlineNode).filter((n): n is JSONContent => n !== null) || []
+      // 空の段落の場合はスペース1つを入れる（TipTapの制約）
       return {
         type: 'paragraph',
-        content: paragraphContent.length > 0 ? paragraphContent : undefined
+        content: paragraphContent.length > 0 ? paragraphContent : [{ type: 'text', text: ' ' }]
       }
 
     case 'code':
+      // 空のコードブロックの場合はスペース1つを入れる（TipTapの制約）
+      const codeText = node.value || ' '
       return {
         type: 'codeBlock',
         attrs: node.lang ? { language: node.lang } : undefined,
-        content: [{ type: 'text', text: node.value || '' }]
+        content: [{ type: 'text', text: codeText }]
       }
 
     case 'blockquote':
@@ -87,6 +90,10 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
         if (child.type === 'paragraph') {
           return child
         }
+        // heading や list などのブロック要素はそのまま返す（paragraphで包まない）
+        if (['heading', 'bulletList', 'orderedList', 'codeBlock', 'blockquote'].includes(child.type)) {
+          return child
+        }
         return {
           type: 'paragraph',
           content: [child]
@@ -95,7 +102,7 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
 
       return {
         type: 'listItem',
-        content: wrappedContent.length > 0 ? wrappedContent : [{ type: 'paragraph' }]
+        content: wrappedContent.length > 0 ? wrappedContent : [{ type: 'paragraph', content: [{ type: 'text', text: ' ' }] }]
       }
 
     case 'thematicBreak':
@@ -111,6 +118,10 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
 function convertInlineNode(node: MdastNode): JSONContent | null {
   switch (node.type) {
     case 'text':
+      // 空文字列や未定義の場合はnullを返す（テキストノード自体を作らない）
+      if (!node.value) {
+        return null
+      }
       return {
         type: 'text',
         text: node.value
