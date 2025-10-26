@@ -4,7 +4,7 @@ interface UseContextMenuPositionParams {
   x: number
   y: number
   isOpen: boolean
-  menuRef: RefObject<HTMLElement>
+  menuRef: RefObject<HTMLElement | null>
 }
 
 interface Position {
