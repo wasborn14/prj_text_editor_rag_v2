@@ -36,7 +36,7 @@ export const RAGSync = ({ repository }: RAGSyncProps) => {
         .from('repository_sync_status')
         .select('last_synced_at, last_sync_status, files_count')
         .eq('repository', repository)
-        .single()
+        .maybeSingle()
 
       return data as SyncStatus | null
     },

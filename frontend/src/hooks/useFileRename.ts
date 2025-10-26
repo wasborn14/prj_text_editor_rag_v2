@@ -16,10 +16,14 @@ interface UseFileRenameParams {
   localFileTree: FileTreeItem[]
   flatTree: TreeNode[]
   expandedDirs: Set<string>
+  selectedFilePath: string | null
   setLocalFileTree: (tree: FileTreeItem[]) => void
   setExpandedDirs: (updater: (prev: Set<string>) => Set<string>) => void
   setIsRenameProcessing: (processing: boolean) => void
   setRenamingPath: (path: string | null) => void
+  setSelectedFile: (path: string | null) => void
+  saveExpandedFolders: (folders: string[]) => void
+  saveLastOpenedFile: (filePath: string | null) => Promise<void>
 }
 
 interface UseFileRenameReturn {
@@ -35,10 +39,14 @@ export function useFileRename({
   localFileTree,
   flatTree,
   expandedDirs,
+  selectedFilePath,
   setLocalFileTree,
   setExpandedDirs,
   setIsRenameProcessing,
   setRenamingPath,
+  setSelectedFile,
+  saveExpandedFolders,
+  saveLastOpenedFile,
 }: UseFileRenameParams): UseFileRenameReturn {
   const handleRenameConfirm = useCallback(
     async (oldPath: string, newName: string) => {
@@ -90,9 +98,33 @@ export function useFileRename({
         const updatedTree = updateFileTreeAfterRename(localFileTree, oldPath, newPath)
         setLocalFileTree(updatedTree)
 
-        // 展開ディレクトリも更新
+        // 展開ディレクトリを更新（ディレクトリリネーム時）
+        let updatedExpandedDirs = expandedDirs
         if (node.type === 'dir' && expandedDirs.has(oldPath)) {
-          setExpandedDirs((prev) => updateExpandedDirsAfterRename(prev, oldPath, newPath))
+          const newExpandedDirsSet = updateExpandedDirsAfterRename(expandedDirs, oldPath, newPath)
+          setExpandedDirs(() => newExpandedDirsSet)
+          updatedExpandedDirs = newExpandedDirsSet
+
+          // Supabaseに保存
+          saveExpandedFolders(Array.from(newExpandedDirsSet))
+        }
+
+        // 現在開いているファイルパスを更新（リネームしたファイル/ディレクトリ配下の場合）
+        if (selectedFilePath) {
+          let newSelectedPath: string | null = null
+
+          if (selectedFilePath === oldPath) {
+            // リネームしたファイル自体が開かれている場合
+            newSelectedPath = newPath
+          } else if (selectedFilePath.startsWith(oldPath + '/')) {
+            // リネームしたディレクトリ配下のファイルが開かれている場合
+            newSelectedPath = selectedFilePath.replace(oldPath, newPath)
+          }
+
+          if (newSelectedPath) {
+            setSelectedFile(newSelectedPath)
+            await saveLastOpenedFile(newSelectedPath)
+          }
         }
 
         toast.success(`"${getFileName(oldPath)}" を "${newName}" に変更しました`, {
@@ -115,10 +147,14 @@ export function useFileRename({
       localFileTree,
       flatTree,
       expandedDirs,
+      selectedFilePath,
       setLocalFileTree,
       setExpandedDirs,
       setIsRenameProcessing,
       setRenamingPath,
+      setSelectedFile,
+      saveExpandedFolders,
+      saveLastOpenedFile,
     ]
   )
 

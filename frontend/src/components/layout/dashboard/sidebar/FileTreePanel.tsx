@@ -45,7 +45,7 @@ export function FileTreePanel({
   onRepoChange,
 }: FileTreePanelProps) {
   const { isOpen, close } = useSidebarStore()
-  const { setSelectedFile } = useEditorStore()
+  const { selectedFilePath, setSelectedFile } = useEditorStore()
   const { isDarkMode } = useThemeStore()
 
   // Zustandストアから状態を取得
@@ -130,10 +130,14 @@ export function FileTreePanel({
     localFileTree,
     flatTree,
     expandedDirs,
+    selectedFilePath,
     setLocalFileTree,
     setExpandedDirs,
     setIsRenameProcessing,
     setRenamingPath,
+    setSelectedFile,
+    saveExpandedFolders,
+    saveLastOpenedFile,
   })
 
   // activeNodeの取得

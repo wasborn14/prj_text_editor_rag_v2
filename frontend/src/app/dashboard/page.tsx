@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const { loading, isAuthenticated } = useRequireAuth('/login')
   const { user, githubToken, signOut, needsTokenSetup, tokenSetupReason } =
     useAuthStore()
-  const { isModified } = useEditorStore()
+  const { isModified, setSelectedFile, setIsModified } = useEditorStore()
 
   // TanStack Queryを使用してデータ取得
   const {
@@ -75,6 +75,10 @@ export default function DashboardPage() {
 
     const repo = repositories.find((r) => r.full_name === repoFullName)
     setManualSelectedRepo(repo || null)
+
+    // エディタの選択ファイルをクリア
+    setSelectedFile(null)
+    setIsModified(false)
 
     // Supabaseに保存（エディタ状態をリセット）
     if (repo) {
