@@ -91,7 +91,7 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
           return child
         }
         // heading や list などのブロック要素はそのまま返す（paragraphで包まない）
-        if (['heading', 'bulletList', 'orderedList', 'codeBlock', 'blockquote'].includes(child.type)) {
+        if (child.type && ['heading', 'bulletList', 'orderedList', 'codeBlock', 'blockquote'].includes(child.type)) {
           return child
         }
         return {
