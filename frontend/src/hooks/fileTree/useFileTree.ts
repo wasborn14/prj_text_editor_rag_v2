@@ -36,7 +36,7 @@ export function useFileTree(
     resetFileTree()
     // ルートノード（空文字列）を展開状態にする
     if (repository) {
-      useFileTreeStore.setState((state) => ({
+      useFileTreeStore.setState(() => ({
         expandedDirs: new Set([''])
       }))
     }

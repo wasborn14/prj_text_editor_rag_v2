@@ -1,4 +1,4 @@
-import { Repository, FileTreeItem } from '@/lib/github'
+import { Repository } from '@/lib/github'
 import type { DragStartEvent, DragOverEvent, DragMoveEvent, DragEndEvent, SensorDescriptor, SensorOptions } from '@dnd-kit/core'
 
 /**
