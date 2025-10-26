@@ -32,6 +32,11 @@ export interface SortableItemProps {
   onItemClick: (event: React.MouseEvent) => void
   isDragOver?: boolean
   isInDragOverDirectory?: boolean
+  isRenaming?: boolean
+  isRenameProcessing?: boolean
+  onContextMenu?: (event: React.MouseEvent) => void
+  onRenameConfirm?: (newName: string) => void
+  onRenameCancel?: () => void
 }
 
 /**

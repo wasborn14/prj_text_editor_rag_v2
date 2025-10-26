@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo, useCallback, useState } from 'react'
 import '@/styles/FileTreePanel.css'
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Edit } from 'lucide-react'
 import {
   buildTreeStructure,
   flattenTree,
@@ -21,6 +21,8 @@ import { useThemeStore } from '@/stores/themeStore'
 import { FileTreeItem } from './FileTreeItem'
 import { DragOverlayItem } from './DragOverlayItem'
 import { Repository } from '@/lib/github'
+import { ContextMenu } from '@/components/common/ContextMenu'
+import { useFileRename } from '@/hooks/useFileRename'
 
 interface FileTreePanelProps {
   repositories: Repository[]
@@ -67,6 +69,15 @@ export function FileTreePanel({
   const fileTreeLoaded = localFileTree.length > 0 && !treeLoading
   useRestoreEditorState(selectedRepo, fileTreeLoaded)
 
+  // リネーム機能のState
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    path: string
+  } | null>(null)
+  const [renamingPath, setRenamingPath] = useState<string | null>(null)
+  const [isRenameProcessing, setIsRenameProcessing] = useState(false)
+
   // フォルダ開閉時のハンドラ（トグル + 保存）
   const handleToggleDirectory = useCallback((path: string) => {
     toggleDirectory(path)
@@ -112,6 +123,19 @@ export function FileTreePanel({
     setSelectedPaths: selection.setSelectedPaths,
   })
 
+  // リネーム処理のカスタムフック
+  const { handleRenameConfirm } = useFileRename({
+    selectedRepo,
+    githubToken,
+    localFileTree,
+    flatTree,
+    expandedDirs,
+    setLocalFileTree,
+    setExpandedDirs,
+    setIsRenameProcessing,
+    setRenamingPath,
+  })
+
   // activeNodeの取得
   const activeNode = useMemo(
     () => flatTree.find((node) => node.fullPath === dragDrop.activeId),
@@ -135,6 +159,34 @@ export function FileTreePanel({
       saveLastOpenedFile(fullPath) // Supabaseに保存
     }
   }
+
+  // コンテキストメニュー表示
+  const handleContextMenu = useCallback((path: string, e: React.MouseEvent) => {
+    setContextMenu({ x: e.clientX, y: e.clientY, path })
+  }, [])
+
+  // リネーム開始
+  const handleRenameStart = useCallback(() => {
+    if (contextMenu) {
+      setRenamingPath(contextMenu.path)
+      setContextMenu(null)
+    }
+  }, [contextMenu])
+
+  // リネーム確定のラッパー（renamingPathを渡すため）
+  const handleRenameConfirmWrapper = useCallback(
+    async (newName: string) => {
+      if (renamingPath) {
+        await handleRenameConfirm(renamingPath, newName)
+      }
+    },
+    [renamingPath, handleRenameConfirm]
+  )
+
+  // リネームキャンセル
+  const handleRenameCancel = useCallback(() => {
+    setRenamingPath(null)
+  }, [])
 
   return (
     <DndContext
@@ -227,6 +279,11 @@ export function FileTreePanel({
                     dragDrop.overId,
                     overNode
                   )}
+                  isRenaming={renamingPath === node.fullPath}
+                  isRenameProcessing={isRenameProcessing}
+                  onContextMenu={(e) => handleContextMenu(node.fullPath, e)}
+                  onRenameConfirm={handleRenameConfirmWrapper}
+                  onRenameCancel={handleRenameCancel}
                 />
               ))}
             </div>
@@ -244,6 +301,21 @@ export function FileTreePanel({
       <DragOverlay>
         {activeNode && <DragOverlayItem node={activeNode} />}
       </DragOverlay>
+
+      {/* コンテキストメニュー */}
+      <ContextMenu
+        x={contextMenu?.x || 0}
+        y={contextMenu?.y || 0}
+        isOpen={!!contextMenu}
+        onClose={() => setContextMenu(null)}
+        items={[
+          {
+            label: 'Rename',
+            icon: <Edit className="h-4 w-4" />,
+            onClick: handleRenameStart,
+          },
+        ]}
+      />
     </DndContext>
   )
 }

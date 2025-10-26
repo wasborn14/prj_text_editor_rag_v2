@@ -3,6 +3,7 @@ import './globals.css'
 import { AuthInitializer } from '@/providers/AuthInitializer'
 import { QueryProvider } from '@/providers/QueryProvider'
 import { ThemeProvider } from '@/providers/ThemeProvider'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: 'Text Editor RAG',
@@ -22,6 +23,7 @@ export default function RootLayout({
           <QueryProvider>
             <AuthInitializer>{children}</AuthInitializer>
           </QueryProvider>
+          <Toaster position="bottom-right" richColors />
         </ThemeProvider>
       </body>
     </html>

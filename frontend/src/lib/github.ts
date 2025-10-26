@@ -171,6 +171,49 @@ export class GitHubClient {
   }
 
   /**
+   * ファイルまたはディレクトリの名称変更
+   * 内部的にはmoveFilesを使用
+   */
+  async renameFileOrDirectory(
+    owner: string,
+    repo: string,
+    oldPath: string,
+    newPath: string,
+    isDirectory: boolean,
+    currentTree: FileTreeItem[],
+    branch: string = 'main'
+  ): Promise<string> {
+    // ディレクトリの場合、配下の全ファイルを含める
+    const moves: Array<{ oldPath: string; newPath: string }> = []
+
+    if (isDirectory) {
+      // ディレクトリ自体
+      moves.push({ oldPath, newPath })
+
+      // 配下の全アイテム
+      const childItems = currentTree.filter(
+        item => item.path.startsWith(oldPath + '/')
+      )
+
+      for (const item of childItems) {
+        const relativePath = item.path.substring(oldPath.length)
+        moves.push({
+          oldPath: item.path,
+          newPath: newPath + relativePath
+        })
+      }
+    } else {
+      // ファイルの場合
+      moves.push({ oldPath, newPath })
+    }
+
+    const fileName = newPath.split('/').pop() || newPath
+    const message = `Rename ${oldPath} to ${fileName}`
+
+    return this.moveFiles(owner, repo, moves, currentTree, message, branch)
+  }
+
+  /**
    * ファイル移動を1コミットで実行
    * base_treeを使わず、完全な新しいツリーを作成することで削除と作成の競合を回避
    */
