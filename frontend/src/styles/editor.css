@@ -1,0 +1,43 @@
+/* TipTap Editor Styles */
+
+/* Links - Light mode */
+.ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror a:hover {
+  color: #1d4ed8;
+}
+
+/* Dark mode */
+[data-theme="dark"] .ProseMirror {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .ProseMirror p {
+  color: #dfdfdf !important;
+}
+
+[data-theme="dark"] .ProseMirror a {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .ProseMirror a:hover {
+  color: #3b82f6;
+}
+
+[data-theme="dark"] .ProseMirror h1,
+[data-theme="dark"] .ProseMirror h2,
+[data-theme="dark"] .ProseMirror h3,
+[data-theme="dark"] .ProseMirror h4,
+[data-theme="dark"] .ProseMirror h5,
+[data-theme="dark"] .ProseMirror h6 {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .ProseMirror li {
+  color: #ffffff !important;
+}

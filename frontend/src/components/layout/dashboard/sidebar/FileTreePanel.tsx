@@ -17,6 +17,7 @@ import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useEditorState } from '@/hooks/useEditorState'
 import { useRestoreEditorState } from '@/hooks/useRestoreEditorState'
+import { useThemeStore } from '@/stores/themeStore'
 import { FileTreeItem } from './FileTreeItem'
 import { DragOverlayItem } from './DragOverlayItem'
 import { Repository } from '@/lib/github'
@@ -43,6 +44,7 @@ export function FileTreePanel({
 }: FileTreePanelProps) {
   const { isOpen, close } = useSidebarStore()
   const { setSelectedFile } = useEditorStore()
+  const { isDarkMode } = useThemeStore()
 
   // Zustandストアから状態を取得
   const {
@@ -158,8 +160,8 @@ export function FileTreePanel({
           file-tree-container
           fixed top-[73px] bottom-0 left-0 z-50 w-80
           flex-shrink-0 overflow-y-auto border-r border-gray-200
-          bg-white p-4
-          dark:border-gray-700 dark:bg-gray-800
+          p-4
+          dark:border-gray-700
           md:static md:top-0 md:z-0
           transition-all duration-300
           ${isOpen
@@ -167,6 +169,7 @@ export function FileTreePanel({
             : '-translate-x-full md:translate-x-0 md:opacity-0 md:w-0 md:p-0 md:border-0'
           }
         `}
+        style={{ backgroundColor: isDarkMode ? '#202020' : 'white' }}
       >
         {/* リポジトリセレクト */}
         <div className="mb-4">

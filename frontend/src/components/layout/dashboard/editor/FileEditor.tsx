@@ -13,6 +13,7 @@ import { convertMarkdownToContent } from '@/lib/editor/markdownConverter'
 import { getEditorExtensions } from '@/lib/editor/editorExtensions'
 import { EditorContentWrapper } from './EditorContentWrapper'
 import type { Editor } from '@tiptap/core'
+import '@/styles/editor.css'
 import '@/styles/novel.css'
 import '@/styles/syntax-highlight.css'
 
@@ -60,7 +61,7 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
   }
 
   return (
-    <div className="flex-1 h-full overflow-auto bg-white dark:bg-gray-900 relative">
+    <div className="flex-1 h-full overflow-auto bg-white dark:bg-black relative">
       {isLoading ? (
         <div className="flex items-center justify-center h-full">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />

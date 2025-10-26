@@ -1,9 +1,10 @@
 import React from 'react'
-import { Menu, X, LogOut, Save } from 'lucide-react'
+import { Menu, X, LogOut, Save, Moon, Sun } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useRAGPanelStore } from '@/stores/ragPanelStore'
+import { useThemeStore } from '@/stores/themeStore'
 import { Search } from 'lucide-react'
 
 interface DashboardHeaderProps {
@@ -23,13 +24,17 @@ export function DashboardHeader({
   const { isOpen, toggle } = useSidebarStore()
   const { isModified, selectedFilePath } = useEditorStore()
   const { isVisible: isRAGVisible, togglePanel } = useRAGPanelStore()
+  const { isDarkMode, toggleTheme } = useThemeStore()
 
   const handleSave = () => {
     window.dispatchEvent(new CustomEvent('editor:save'))
   }
 
   return (
-    <header className="flex-shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <header
+      className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700"
+      style={{ backgroundColor: isDarkMode ? '#202020' : 'white' }}
+    >
       <div className="flex items-center justify-between px-4 py-4">
         {/* 左側: ハンバーガーメニュー + ユーザー名 */}
         <div className="flex items-center gap-4">
@@ -74,14 +79,24 @@ export function DashboardHeader({
             className={`
               flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-colors
               ${isRAGVisible
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }
             `}
             title="RAG Search"
           >
             <Search className="w-4 h-4" />
             <span className="hidden sm:inline text-sm font-medium">RAG Search</span>
+          </button>
+
+          {/* ダークモードトグルボタン */}
+          <button
+            onClick={toggleTheme}
+            className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="Toggle theme"
+            title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
           {/* ログアウトボタン（モバイルはアイコンのみ、デスクトップはフルボタン） */}
