@@ -1,11 +1,11 @@
 import React from 'react'
-import { Menu, X, LogOut, Save, Moon, Sun } from 'lucide-react'
+import { Menu, X, Save, Search } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useRAGPanelStore } from '@/stores/ragPanelStore'
 import { useThemeStore } from '@/stores/themeStore'
-import { Search } from 'lucide-react'
+import { UserMenu } from '@/components/common/UserMenu'
 
 interface DashboardHeaderProps {
   user: SupabaseUser | null
@@ -53,7 +53,7 @@ export function DashboardHeader({
           </p>
         </div>
 
-        {/* 右側: Saveボタン + ログアウトボタン */}
+        {/* 右側: Saveボタン + RAG検索 + ユーザーメニュー */}
         <div className="flex items-center gap-2">
           {/* Saveボタン */}
           {selectedFilePath && (
@@ -73,7 +73,7 @@ export function DashboardHeader({
             </button>
           )}
 
-
+          {/* RAG検索ボタン */}
           <button
             onClick={togglePanel}
             className={`
@@ -89,25 +89,12 @@ export function DashboardHeader({
             <span className="hidden sm:inline text-sm font-medium">RAG Search</span>
           </button>
 
-          {/* ダークモードトグルボタン */}
-          <button
-            onClick={toggleTheme}
-            className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-            aria-label="Toggle theme"
-            title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
-
-          {/* ログアウトボタン（モバイルはアイコンのみ、デスクトップはフルボタン） */}
-          <button
-            onClick={onSignOut}
-            className="flex items-center gap-2 rounded-lg p-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 md:bg-gray-900 md:px-4 md:py-2 md:text-sm md:font-medium md:text-white md:hover:bg-gray-800 dark:md:bg-white dark:md:text-gray-900 dark:md:hover:bg-gray-100"
-            aria-label="ログアウト"
-          >
-            <LogOut className="h-5 w-5 md:h-4 md:w-4" />
-            <span className="hidden md:inline">ログアウト</span>
-          </button>
+          {/* ユーザーメニュー（ダークモード切り替え・ログアウト） */}
+          <UserMenu
+            isDarkMode={isDarkMode}
+            onToggleTheme={toggleTheme}
+            onSignOut={onSignOut}
+          />
         </div>
       </div>
     </header>
