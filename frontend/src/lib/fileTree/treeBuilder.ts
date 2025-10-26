@@ -2,7 +2,41 @@ import { FileTreeItem } from '@/lib/github'
 import { TreeNode } from './types'
 
 /**
- * ノードをソート（ディレクトリ優先、アルファベット順）
+ * 自然順ソート用の比較関数
+ * 数値部分を数値として比較し、それ以外は文字列として比較
+ * 例: 1.md < 2.md < 9.md < 10.md < 11.md
+ */
+function naturalCompare(a: string, b: string): number {
+  const regex = /(\d+)|(\D+)/g
+  const aParts = a.match(regex) || []
+  const bParts = b.match(regex) || []
+
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aPart = aParts[i] || ''
+    const bPart = bParts[i] || ''
+
+    // 両方が数値の場合は数値として比較
+    const aNum = parseInt(aPart, 10)
+    const bNum = parseInt(bPart, 10)
+
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      if (aNum !== bNum) {
+        return aNum - bNum
+      }
+    } else {
+      // 文字列として比較
+      const comparison = aPart.localeCompare(bPart, 'en', { sensitivity: 'base' })
+      if (comparison !== 0) {
+        return comparison
+      }
+    }
+  }
+
+  return 0
+}
+
+/**
+ * ノードをソート（ディレクトリ優先、自然順ソート）
  */
 export function sortNodes(nodes: TreeNode[]): TreeNode[] {
   return nodes
@@ -10,7 +44,7 @@ export function sortNodes(nodes: TreeNode[]): TreeNode[] {
       if (a.type !== b.type) {
         return a.type === 'dir' ? -1 : 1
       }
-      return a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+      return naturalCompare(a.name, b.name)
     })
     .map((node) => ({
       ...node,
