@@ -120,7 +120,7 @@ export const RAGSync = ({ repository }: RAGSyncProps) => {
         <button
           onClick={handleSync}
           disabled={isSyncing || !repository}
-          className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white px-4 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
           <span>{isSyncing ? 'Syncing...' : 'Sync Repository'}</span>

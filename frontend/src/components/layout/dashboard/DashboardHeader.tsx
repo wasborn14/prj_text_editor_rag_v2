@@ -79,7 +79,7 @@ export function DashboardHeader({
             className={`
               flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-colors
               ${isRAGVisible
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }
             `}

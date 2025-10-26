@@ -59,9 +59,9 @@ export function FileTreeItem({
       {isDir && !isRootNode ? (
         <button onClick={onToggle} className="flex-shrink-0" type="button">
           {isExpanded ? (
-            <ChevronDown className="h-[18px] w-[18px] text-gray-500" />
+            <ChevronDown className="h-[18px] w-[18px] text-gray-500 dark:text-gray-400" />
           ) : (
-            <ChevronRight className="h-[18px] w-[18px] text-gray-500" />
+            <ChevronRight className="h-[18px] w-[18px] text-gray-500 dark:text-gray-400" />
           )}
         </button>
       ) : !isDir ? (
@@ -70,12 +70,12 @@ export function FileTreeItem({
 
       {isDir ? (
         isExpanded ? (
-          <FolderOpen className="h-[18px] w-[18px] text-blue-500" />
+          <FolderOpen className="h-[18px] w-[18px] text-blue-500 dark:text-gray-400" />
         ) : (
-          <Folder className="h-[18px] w-[18px] text-blue-500" />
+          <Folder className="h-[18px] w-[18px] text-blue-500 dark:text-gray-400" />
         )
       ) : (
-        <File className="h-[18px] w-[18px] text-gray-400" />
+        <File className="h-[18px] w-[18px] text-gray-400 dark:text-gray-500" />
       )}
 
       <span className="truncate text-gray-900 dark:text-gray-100">{node.name}</span>
