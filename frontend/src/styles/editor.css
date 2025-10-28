@@ -12,32 +12,92 @@
 }
 
 /* Dark mode */
-[data-theme="dark"] .ProseMirror {
+html[data-theme="dark"] .ProseMirror {
   color: #ffffff !important;
 }
 
-[data-theme="dark"] .ProseMirror p {
+html[data-theme="dark"] .ProseMirror p {
   color: #dfdfdf !important;
 }
 
-[data-theme="dark"] .ProseMirror a {
+html[data-theme="dark"] .ProseMirror a {
   color: #60a5fa;
 }
 
-[data-theme="dark"] .ProseMirror a:hover {
+html[data-theme="dark"] .ProseMirror a:hover {
   color: #3b82f6;
 }
 
-[data-theme="dark"] .ProseMirror h1,
-[data-theme="dark"] .ProseMirror h2,
-[data-theme="dark"] .ProseMirror h3,
-[data-theme="dark"] .ProseMirror h4,
-[data-theme="dark"] .ProseMirror h5,
-[data-theme="dark"] .ProseMirror h6 {
+html[data-theme="dark"] .ProseMirror h1,
+html[data-theme="dark"] .ProseMirror h2,
+html[data-theme="dark"] .ProseMirror h3,
+html[data-theme="dark"] .ProseMirror h4,
+html[data-theme="dark"] .ProseMirror h5,
+html[data-theme="dark"] .ProseMirror h6 {
   color: #ffffff !important;
   font-weight: 600;
 }
 
-[data-theme="dark"] .ProseMirror li {
+html[data-theme="dark"] .ProseMirror li {
   color: #ffffff !important;
+}
+
+/* Table Styles - Light mode */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb; /* 外枠のボーダー */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05),
+              0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  min-width: 1em;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.ProseMirror table th {
+  font-weight: 600;
+  text-align: left;
+  background-color: #dbeafe; /* 薄い青 - blue-100 */
+  color: #1e40af; /* 濃い青 - blue-800 */
+}
+
+.ProseMirror table tr:nth-child(even) td {
+  background-color: #f9fafb; /* gray-50 */
+}
+
+/* Table Styles - Dark mode */
+html[data-theme="dark"] .ProseMirror table {
+  background-color: #000000 !important; /* 黒 */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2),
+              0 2px 4px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-theme="dark"] .ProseMirror table td,
+html[data-theme="dark"] .ProseMirror table th {
+  border: 1px solid #4b5563 !important; /* gray-600 - 薄いグレー */
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+html[data-theme="dark"] .ProseMirror table th {
+  background-color: #1f2937 !important; /* gray-800 - サイドメニューと同じ */
+  color: #ffffff !important; /* 白 */
+  font-weight: 600;
+}
+
+html[data-theme="dark"] .ProseMirror table tr:nth-child(even) td {
+  background-color: #000000 !important; /* 黒 */
+}
+
+html[data-theme="dark"] .ProseMirror table tr:nth-child(odd) td {
+  background-color: #000000 !important; /* 黒 */
 }

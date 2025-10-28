@@ -110,6 +110,60 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
         type: 'horizontalRule'
       }
 
+    case 'table':
+      // 最初の行をヘッダーとして処理
+      const tableRows = node.children || []
+      const convertedRows = tableRows.map((rowNode, index) => {
+        if (rowNode.type !== 'tableRow') return null
+
+        const isHeaderRow = index === 0
+        const cells = rowNode.children?.map(cellNode => {
+          if (cellNode.type !== 'tableCell') return null
+
+          // テーブルセルの子要素はinlineノード
+          const cellInlineContent = cellNode.children?.map(convertInlineNode).filter((n): n is JSONContent => n !== null) || []
+
+          return {
+            type: isHeaderRow ? 'tableHeader' : 'tableCell',
+            content: [
+              {
+                type: 'paragraph',
+                content: cellInlineContent.length > 0 ? cellInlineContent : [{ type: 'text', text: ' ' }]
+              }
+            ]
+          } as JSONContent
+        }).filter((n): n is JSONContent => n !== null) || []
+
+        return {
+          type: 'tableRow',
+          content: cells
+        } as JSONContent
+      }).filter((n): n is JSONContent => n !== null)
+
+      return {
+        type: 'table',
+        content: convertedRows
+      } as JSONContent
+
+    case 'tableRow':
+      return {
+        type: 'tableRow',
+        content: node.children?.map(convertMdastNode).filter((n): n is JSONContent => n !== null) || []
+      }
+
+    case 'tableCell':
+      // テーブルセルの子要素はinlineノード（text, strong, emphasisなど）
+      const cellInlineContent = node.children?.map(convertInlineNode).filter((n): n is JSONContent => n !== null) || []
+      return {
+        type: 'tableCell',
+        content: [
+          {
+            type: 'paragraph',
+            content: cellInlineContent.length > 0 ? cellInlineContent : [{ type: 'text', text: ' ' }]
+          }
+        ]
+      }
+
     default:
       return null
   }
@@ -235,9 +289,54 @@ function convertNodeToMarkdown(node: JSONContent, listLevel = 0): string {
     case 'hardBreak':
       return '  '
 
+    case 'table':
+      return convertTableToMarkdown(node)
+
     default:
       return ''
   }
+}
+
+function convertTableToMarkdown(tableNode: JSONContent): string {
+  if (!tableNode.content || tableNode.content.length === 0) return ''
+
+  const rows: string[][] = []
+
+  // 各行を処理
+  for (const rowNode of tableNode.content) {
+    if (rowNode.type !== 'tableRow' || !rowNode.content) continue
+
+    const cells: string[] = []
+    for (const cellNode of rowNode.content) {
+      if (cellNode.type === 'tableCell' || cellNode.type === 'tableHeader') {
+        const cellText = cellNode.content
+          ?.map(n => convertNodeToMarkdown(n))
+          .join(' ')
+          .trim() || ''
+        cells.push(cellText)
+      }
+    }
+    rows.push(cells)
+  }
+
+  if (rows.length === 0) return ''
+
+  // Markdown表形式に整形
+  const lines: string[] = []
+
+  // ヘッダー行
+  if (rows.length > 0) {
+    lines.push('| ' + rows[0].join(' | ') + ' |')
+    // 区切り行
+    lines.push('|' + rows[0].map(() => '------').join('|') + '|')
+  }
+
+  // データ行
+  for (let i = 1; i < rows.length; i++) {
+    lines.push('| ' + rows[i].join(' | ') + ' |')
+  }
+
+  return lines.join('\n')
 }
 
 function convertListItem(node: JSONContent, level: number): string {
