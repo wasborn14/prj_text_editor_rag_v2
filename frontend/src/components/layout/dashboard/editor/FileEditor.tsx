@@ -9,8 +9,6 @@ import { useFileShaSync } from '@/hooks/useFileShaSync'
 import { useEditorSave } from '@/hooks/useEditorSave'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { useMermaidNodes } from './mermaid/MermaidNodeManager'
-import { DUMMY_MARKDOWN } from '@/constants/dummyMarkdown'
-import { Loader2 } from 'lucide-react'
 import { convertMarkdownToContent } from '@/lib/editor/markdownConverter'
 import { getEditorExtensions } from '@/lib/editor/editorExtensions'
 import { EditorContentWrapper } from './EditorContentWrapper'
@@ -50,11 +48,10 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
   useMermaidNodes() // Mermaidノードをマウント
 
   const editorContent = useMemo(() => {
-    // TODO: 一時的にダミーMarkdownを使用（Mermaid機能のテスト用）
-    const content = DUMMY_MARKDOWN
+    const content = fileData?.content
     if (!content) return null
     return convertMarkdownToContent(content)
-  }, [])
+  }, [fileData?.content])
 
   // エディタの変更を検知
   const handleUpdate = () => {
@@ -69,7 +66,7 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
   return (
     <div className="flex-1 h-full overflow-auto bg-white dark:bg-black relative">
       {editorContent ? (
-        <div key="dummy-markdown" className="w-full h-full">
+        <div key={selectedFilePath || 'no-file'} className="w-full h-full">
           <EditorRoot>
             <EditorContent
               extensions={getEditorExtensions()}

@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import mermaid from 'mermaid'
-import { getMermaidConfig } from '@/lib/editor/mermaidConfig'
+import { getMermaidConfig } from '@/lib/editor/mermaid/mermaidConfig'
+import { sanitizeMermaidCode } from '@/lib/editor/mermaid/mermaidSanitizer'
+import { getMermaidErrorMessage } from '@/lib/editor/mermaid/mermaidErrorHandler'
 
 interface UseMermaidRenderOptions {
   code: string
@@ -20,7 +22,7 @@ export function useMermaidRender({ code }: UseMermaidRenderOptions): UseMermaidR
   const [error, setError] = useState<string>('')
   const [isRendering, setIsRendering] = useState(false)
 
-  // Mermaid初期化（テーマ変更を検知して再初期化）
+  // Mermaid初期化
   useEffect(() => {
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark'
     mermaid.initialize(getMermaidConfig(isDarkMode))
@@ -36,13 +38,13 @@ export function useMermaidRender({ code }: UseMermaidRenderOptions): UseMermaidR
 
     setIsRendering(true)
     try {
+      const sanitizedCode = sanitizeMermaidCode(diagramCode)
       const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
-      const { svg: renderedSvg } = await mermaid.render(id, diagramCode)
+      const { svg: renderedSvg } = await mermaid.render(id, sanitizedCode)
       setSvg(renderedSvg)
       setError('')
     } catch (err) {
-      console.error('Mermaid rendering error:', err)
-      setError('ダイアグラムの描画に失敗しました')
+      setError(getMermaidErrorMessage(err))
       setSvg('')
     } finally {
       setIsRendering(false)

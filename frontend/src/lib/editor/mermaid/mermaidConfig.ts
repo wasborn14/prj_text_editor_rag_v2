@@ -13,7 +13,7 @@ export function getMermaidConfig(isDarkMode: boolean): MermaidConfig {
     fontFamily: 'ui-sans-serif, system-ui, sans-serif',
     flowchart: {
       useMaxWidth: false,
-      htmlLabels: false,
+      htmlLabels: false, // HTMLラベルを無効化（<br/>のパースエラー対策）
       curve: 'basis',
       padding: 20,
       nodeSpacing: 80,
@@ -29,7 +29,7 @@ export function getMermaidConfig(isDarkMode: boolean): MermaidConfig {
       useMaxWidth: false,
     },
     themeVariables: colors,
-    htmlLabels: false,
+    htmlLabels: false, // HTMLラベルを無効化
   }
 }
 
