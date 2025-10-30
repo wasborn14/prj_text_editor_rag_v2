@@ -8,6 +8,7 @@ import TableCell from '@tiptap/extension-table-cell'
 import { Extension } from '@tiptap/core'
 import ListItem from '@tiptap/extension-list-item'
 import Link from '@tiptap/extension-link'
+import { MermaidNode } from './extensions/MermaidNode'
 
 // Highlight.js設定
 const lowlight = createLowlight(common)
@@ -217,5 +218,6 @@ export function getEditorExtensions() {
         rel: 'noopener noreferrer',
       },
     }),
+    MermaidNode,
   ]
 }

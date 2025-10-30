@@ -1,0 +1,308 @@
+/* Mermaid Node Wrapper */
+.mermaid-node-view {
+  margin: 1.5rem 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #ffffff;
+  max-height: 800px;
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-theme="dark"] .mermaid-node-view {
+  border-color: #4b5563;
+  background: #1f2937;
+}
+
+/* Header with mode toggle */
+.mermaid-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+}
+
+html[data-theme="dark"] .mermaid-header {
+  border-bottom-color: #4b5563;
+  background: #111827;
+}
+
+/* Zoom controls */
+.mermaid-zoom-controls {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 2rem;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.zoom-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-btn.zoom-reset {
+  min-width: 4rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.zoom-percentage {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+html[data-theme="dark"] .zoom-btn {
+  background: #374151;
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+
+html[data-theme="dark"] .zoom-btn:hover:not(:disabled) {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.mermaid-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Hide button text on mobile */
+@media (max-width: 640px) {
+  .mode-btn span {
+    display: none;
+  }
+
+  .mode-btn {
+    padding: 0.375rem;
+    min-width: 2rem;
+  }
+}
+
+.mode-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.mode-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .mode-btn {
+  background: #374151;
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+
+html[data-theme="dark"] .mode-btn:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+html[data-theme="dark"] .mode-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+/* Content area */
+.mermaid-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mermaid-content.code-only {
+  /* コードのみ表示モード */
+}
+
+.mermaid-content.preview-only {
+  /* プレビューのみモード */
+}
+
+/* Code editor */
+.mermaid-editor {
+  flex: 1;
+  min-height: 300px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mermaid-content.code-only .mermaid-editor {
+  min-height: 400px;
+  border-bottom: none;
+}
+
+html[data-theme="dark"] .mermaid-editor {
+  border-bottom-color: #4b5563;
+}
+
+.mermaid-textarea {
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  border: none;
+  outline: none;
+  resize: none;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+html[data-theme="dark"] .mermaid-textarea {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.mermaid-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Preview container */
+.mermaid-preview-container {
+  flex: 1;
+  min-height: 0;
+  padding: 1.5rem;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.mermaid-content.preview-only .mermaid-preview-container {
+  min-height: 300px;
+  /* max-heightは.mermaid-node-viewの800pxに合わせて自動調整 */
+}
+
+/* Preview */
+.mermaid-preview {
+  min-width: max-content;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mermaid-preview svg {
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  overflow: visible;
+}
+
+/* Ensure flowchart nodes have enough space */
+.mermaid-preview svg .node rect,
+.mermaid-preview svg .node polygon,
+.mermaid-preview svg .node circle,
+.mermaid-preview svg .node ellipse {
+  min-width: 120px;
+}
+
+.mermaid-preview svg text {
+  overflow: visible;
+}
+
+/* Fix text alignment in nodes */
+.mermaid-preview svg .nodeLabel,
+.mermaid-preview svg .label {
+  width: auto;
+  white-space: nowrap;
+  dominant-baseline: middle !important;
+  text-anchor: middle !important;
+  alignment-baseline: middle !important;
+}
+
+.mermaid-preview svg .nodeLabel text,
+.mermaid-preview svg .label text {
+  dominant-baseline: middle !important;
+  alignment-baseline: middle !important;
+}
+
+/* Fine-tune text vertical position */
+.mermaid-preview svg .nodeLabel tspan,
+.mermaid-preview svg .label tspan {
+  dominant-baseline: middle !important;
+  alignment-baseline: middle !important;
+}
+
+/* Adjust flowchart node text position slightly up */
+.mermaid-preview svg g.label {
+  transform: translateY(-12px);
+}
+
+/* Fix flowchart node text positioning */
+.mermaid-preview svg .node .label foreignObject {
+  overflow: visible !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mermaid-preview svg .node .label foreignObject > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Empty state */
+.mermaid-empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2rem;
+}
+
+html[data-theme="dark"] .mermaid-empty {
+  color: #6b7280;
+}
+
+/* Error state */
+.mermaid-error {
+  text-align: center;
+  color: #ef4444;
+  padding: 2rem;
+}
+
+html[data-theme="dark"] .mermaid-error {
+  color: #f87171;
+}

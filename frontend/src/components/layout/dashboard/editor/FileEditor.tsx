@@ -8,6 +8,8 @@ import { useFileContent } from '@/hooks/useFileContent'
 import { useFileShaSync } from '@/hooks/useFileShaSync'
 import { useEditorSave } from '@/hooks/useEditorSave'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
+import { useMermaidNodes } from './mermaid/MermaidNodeManager'
+import { DUMMY_MARKDOWN } from '@/constants/dummyMarkdown'
 import { Loader2 } from 'lucide-react'
 import { convertMarkdownToContent } from '@/lib/editor/markdownConverter'
 import { getEditorExtensions } from '@/lib/editor/editorExtensions'
@@ -16,6 +18,7 @@ import type { Editor } from '@tiptap/core'
 import '@/styles/editor.css'
 import '@/styles/novel.css'
 import '@/styles/syntax-highlight.css'
+import '@/styles/mermaid.css'
 
 interface FileEditorProps {
   owner: string | null
@@ -44,11 +47,14 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
   useFileShaSync(fileData?.sha)
   useEditorSave(editorInstance, owner, repo)
   useUnsavedWarning(isModified)
+  useMermaidNodes() // Mermaidノードをマウント
 
   const editorContent = useMemo(() => {
-    if (!fileData?.content) return null
-    return convertMarkdownToContent(fileData.content)
-  }, [fileData?.content])
+    // TODO: 一時的にダミーMarkdownを使用（Mermaid機能のテスト用）
+    const content = DUMMY_MARKDOWN
+    if (!content) return null
+    return convertMarkdownToContent(content)
+  }, [])
 
   // エディタの変更を検知
   const handleUpdate = () => {
@@ -62,12 +68,8 @@ export function FileEditor({ owner, repo }: FileEditorProps) {
 
   return (
     <div className="flex-1 h-full overflow-auto bg-white dark:bg-black relative">
-      {isLoading ? (
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      ) : editorContent ? (
-        <div key={selectedFilePath} className="w-full h-full">
+      {editorContent ? (
+        <div key="dummy-markdown" className="w-full h-full">
           <EditorRoot>
             <EditorContent
               extensions={getEditorExtensions()}

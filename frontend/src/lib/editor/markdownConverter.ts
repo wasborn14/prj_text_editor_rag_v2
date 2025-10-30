@@ -64,6 +64,14 @@ function convertMdastNode(node: MdastNode): JSONContent | null {
       }
 
     case 'code':
+      // Mermaidコードブロックの場合はMermaidノードに変換
+      if (node.lang === 'mermaid') {
+        return {
+          type: 'mermaid',
+          attrs: { code: node.value || '' }
+        }
+      }
+
       // 空のコードブロックの場合はスペース1つを入れる（TipTapの制約）
       const codeText = node.value || ' '
       return {
@@ -291,6 +299,10 @@ function convertNodeToMarkdown(node: JSONContent, listLevel = 0): string {
 
     case 'table':
       return convertTableToMarkdown(node)
+
+    case 'mermaid':
+      const mermaidCode = node.attrs?.code || ''
+      return `\`\`\`mermaid\n${mermaidCode}\n\`\`\``
 
     default:
       return ''
