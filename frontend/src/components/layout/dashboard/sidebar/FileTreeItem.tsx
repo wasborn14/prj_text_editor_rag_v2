@@ -11,7 +11,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { SortableItemProps } from '@/lib/fileTree/types'
-import { RenameInput } from '@/components/common/RenameInput'
+import { RenameInput } from '@/components/layout/dashboard/common/RenameInput'
 import { useLongPress } from '@/hooks/useLongPress'
 
 /**

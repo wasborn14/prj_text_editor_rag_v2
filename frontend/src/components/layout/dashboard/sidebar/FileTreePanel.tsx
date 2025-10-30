@@ -21,7 +21,7 @@ import { useThemeStore } from '@/stores/themeStore'
 import { FileTreeItem } from './FileTreeItem'
 import { DragOverlayItem } from './DragOverlayItem'
 import { Repository } from '@/lib/github'
-import { ContextMenu } from '@/components/common/ContextMenu'
+import { ContextMenu } from '@/components/layout/dashboard/common/ContextMenu'
 import { useFileRename } from '@/hooks/useFileRename'
 
 interface FileTreePanelProps {

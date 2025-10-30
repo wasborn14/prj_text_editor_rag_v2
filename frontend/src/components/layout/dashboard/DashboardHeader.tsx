@@ -5,7 +5,7 @@ import { useSidebarStore } from '@/stores/sidebarStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useRAGPanelStore } from '@/stores/ragPanelStore'
 import { useThemeStore } from '@/stores/themeStore'
-import { UserMenu } from '@/components/common/UserMenu'
+import { UserMenu } from '@/components/layout/dashboard/common/UserMenu'
 
 interface DashboardHeaderProps {
   user: SupabaseUser | null
