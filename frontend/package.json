@@ -25,6 +25,7 @@
     "clsx": "^2.1.1",
     "dnd-kit-sortable-tree": "^0.1.73",
     "lucide-react": "^0.545.0",
+    "mermaid": "^11.12.1",
     "next": "15.5.4",
     "novel": "^1.0.2",
     "prismjs": "^1.30.0",
